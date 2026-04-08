@@ -80,6 +80,8 @@ if not st.session_state.entered:
             st.session_state.current_obs = st.session_state.env.reset()
             st.rerun()
 
+    obs = st.session_state.current_obs
+
     # --- SIDEBAR (Logic Calibration) ---
     with st.sidebar:
         st.markdown("<div class='chapter-tag'>Logic Calibration</div>", unsafe_allow_html=True)
@@ -114,8 +116,6 @@ if not st.session_state.entered:
     with col_stat:
         st.markdown(f"<div style='text-align:right;'><div class='system-badge'>ID: {st.session_state.audit_id}</div></div>", unsafe_allow_html=True)
 
-    obs = st.session_state.current_obs
-    
     st.markdown("<div style='height: 8vh;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='chapter-tag'>Subject Inquiry</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='chapter-title'>\"{custom_claim}\"</div>", unsafe_allow_html=True)
