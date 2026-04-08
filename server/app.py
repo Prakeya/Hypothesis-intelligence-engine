@@ -1,5 +1,5 @@
 import streamlit as st
-from server.env import HypothesisEnv, Action, Observation
+from server.env import HypothesisEnv, Action, Observation, State
 import time
 import json
 from datetime import datetime
@@ -103,14 +103,16 @@ else:
         
         if selected_task_id != obs.task_id:
             new_task_data = next(t for t in all_tasks if t["id"] == selected_task_id)
-            from server.env import Observation
-            st.session_state.current_obs = Observation(
+            new_obs = Observation(
                 task_id=new_task_data["id"],
                 claim=new_task_data["claim"],
                 dataset=new_task_data["dataset"],
                 independent_var=new_task_data["independent_var"],
                 dependent_var=new_task_data["dependent_var"]
             )
+            st.session_state.current_obs = new_obs
+            # Properly update the environment state to reflect the manual switch
+            st.session_state.env._current_state = State(current_task=new_obs)
             st.rerun()
 
         st.markdown("---")
