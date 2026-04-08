@@ -52,6 +52,19 @@ class HypothesisEnv:
                 "dependent_var": "marks"
             },
             {
+                "id": "easy-02",
+                "difficulty": "easy",
+                "claim": "Higher temperatures increase ice cream sales.",
+                "dataset": [
+                    {"temp": 20, "sales": 100},
+                    {"temp": 25, "sales": 250},
+                    {"temp": 30, "sales": 400},
+                    {"temp": 35, "sales": 600}
+                ],
+                "independent_var": "temp",
+                "dependent_var": "sales"
+            },
+            {
                 "id": "medium-01",
                 "difficulty": "medium",
                 "claim": "Higher caffeine intake leads to less sleep.",
@@ -66,6 +79,20 @@ class HypothesisEnv:
                 "dependent_var": "sleep"
             },
             {
+                "id": "medium-02",
+                "difficulty": "medium",
+                "claim": "Increased exercise hours lead to weight loss.",
+                "dataset": [
+                    {"hours": 0, "weight": 90},
+                    {"hours": 2, "weight": 88},
+                    {"hours": 5, "weight": 84},
+                    {"hours": 8, "weight": 79},
+                    {"hours": 10, "weight": 75}
+                ],
+                "independent_var": "hours",
+                "dependent_var": "weight"
+            },
+            {
                 "id": "hard-01",
                 "difficulty": "hard",
                 "claim": "Increased rainfall always leads to higher crop yield.",
@@ -78,6 +105,20 @@ class HypothesisEnv:
                 ],
                 "independent_var": "rainfall",
                 "dependent_var": "yield"
+            },
+            {
+                "id": "hard-02",
+                "difficulty": "hard",
+                "claim": "Higher website traffic always increases server response time.",
+                "dataset": [
+                    {"users": 100, "latency": 20},
+                    {"users": 500, "latency": 25},
+                    {"users": 2000, "latency": 45},
+                    {"users": 5000, "latency": 40}, # Optimized caching kicks in
+                    {"users": 10000, "latency": 35}
+                ],
+                "independent_var": "users",
+                "dependent_var": "latency"
             }
         ]
         self._current_state: Optional[State] = None
