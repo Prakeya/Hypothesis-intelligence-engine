@@ -11,9 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Expose port for OpenEnv server / Streamlit
-EXPOSE 8000
-EXPOSE 8501
+# Hugging Face Spaces requires port 7860
+EXPOSE 7860
 
-# Default command is to run the OpenEnv server
-CMD ["python", "app.py"]
+# Run Streamlit on HF-required port
+CMD ["python", "-m", "streamlit", "run", "server/app.py", "--server.port=7860", "--server.address=0.0.0.0"]

@@ -1,3 +1,13 @@
+---
+title: Hypothesis Intelligence Engine
+emoji: 🔬
+colorFrom: gray
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
+
 # Hypothesis Intelligence Engine (OpenEnv)
 > **AI-Driven Logic Auditing & Hallucination Detection Environment**
 

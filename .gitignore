@@ -27,7 +27,7 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
-#  常用来将Python脚本打包成可执行文件
+#  Python
 *.manifest
 *.spec
 
