@@ -8,7 +8,7 @@ import uuid
 # --- Page Config ---
 st.set_page_config(
     page_title="Hypothesis Intelligence",
-    page_icon="⚛️",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -83,7 +83,7 @@ if not st.session_state.entered:
 else:
     col_nav, col_stat = st.columns([1.5, 7.5])
     with col_nav:
-        if st.button("← RESET"): reset_system()
+        if st.button(" RESET"): reset_system()
     with col_stat:
         st.markdown(f"<div style='text-align:right;'><div class='system-badge'>ID: {st.session_state.audit_id}</div></div>", unsafe_allow_html=True)
 

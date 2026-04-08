@@ -5,7 +5,7 @@ To test a hypothesis, the Engine requires **Evidence**. In The Alchemist Lab, th
 ## Why is it required?
 Imagine trying to prove that "Higher temperatures melt more ice cream" without any actual weather or sales data. You would just be guessing. 
 
-The Engine is designed to be a **Logic Judge**. It doesn't guess; it calculates. By providing a JSON dataset, you are feeding the Engine a "Truth Matrix"—a structured list of facts it can use to verify your claim.
+The Engine is designed to be a **Logic Judge**. It doesn't guess; it calculates. By providing a JSON dataset, you are feeding the Engine a "Truth Matrix"a structured list of facts it can use to verify your claim.
 
 ## How to format it?
 The Engine looks for a list of data points. Each point should have a name (key) and a value.
