@@ -1,3 +1,4 @@
+repo_id: "Prakeya/hypothesis-intelligence-v4"
 name: hypothesis-intelligence-engine
 version: 1.0.3
 description: "AI logic auditing and hallucination detection system. Evaluates agent ability to ground hypotheses in provided dataset artifacts."
