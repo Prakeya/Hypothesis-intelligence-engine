@@ -91,14 +91,37 @@ else:
     
     st.markdown("<div style='height: 8vh;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='chapter-tag'>Subject Inquiry</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='chapter-title'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
     
-    st.markdown("<div class='chapter-tag'>Dataset Artifacts</div>", unsafe_allow_html=True)
-    st.table(obs.dataset)
+    use_custom = st.toggle("Enable Manual Input Override", value=False)
+    
+    if use_custom:
+        edited_claim = st.text_area("Hypothesis Claim", value=obs.claim)
+        st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Dataset Artifacts</div>", unsafe_allow_html=True)
+        edited_dataset = st.data_editor(obs.dataset, num_rows="dynamic", use_container_width=True)
+        col_v1, col_v2 = st.columns(2)
+        with col_v1:
+            edited_indep = st.text_input("Independent Variable", value=obs.independent_var)
+        with col_v2:
+            edited_dep = st.text_input("Dependent Variable", value=obs.dependent_var)
+    else:
+        st.markdown(f"<div class='chapter-title'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
+        st.markdown("<div class='chapter-tag'>Dataset Artifacts</div>", unsafe_allow_html=True)
+        st.table(obs.dataset)
+        edited_claim = obs.claim
+        edited_dataset = obs.dataset
+        edited_indep = obs.independent_var
+        edited_dep = obs.dependent_var
     
     st.markdown("<div style='height: 4rem;'></div>", unsafe_allow_html=True)
     if st.button("EXECUTE AUDIT", type="primary"):
         with st.spinner("Decoding reasoning artifacts..."):
+            st.session_state.current_obs.claim = edited_claim
+            st.session_state.current_obs.dataset = edited_dataset
+            st.session_state.current_obs.independent_var = edited_indep
+            st.session_state.current_obs.dependent_var = edited_dep
+            if hasattr(st.session_state.env, '_current_state') and st.session_state.env._current_state:
+                st.session_state.env._current_state.current_task = st.session_state.current_obs
+                
             time.sleep(1)
             # Baseline simulation call
             from server.agent import HypothesisAgent

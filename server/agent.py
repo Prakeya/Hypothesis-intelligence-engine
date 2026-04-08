@@ -1,6 +1,5 @@
 import random
 import re
-from server.inference import run_inference, parse_inference_output
 
 class HypothesisAgent:
     def __init__(self, use_llm=False):
@@ -50,33 +49,8 @@ class HypothesisAgent:
         }
 
     def _generate_llm_action(self, claim, dataset, audit_id):
-        """Delegates LLM call to the centralized inference module."""
-        prompt = f"""
-        Task: Analyze the following claim based on the provided dataset.
-        Claim: {claim}
-        Dataset: {dataset}
-        
-        Output format:
-        Hypothesis: <your hypothesis>
-        Method: <your method>
-        Conclusion: <your conclusion>
-        
-        Constraints:
-        1. Be accurate.
-        2. Only use numbers from the dataset.
-        3. Do not make absolute claims if the data has even one exception.
-        """
-        
-        raw_output = run_inference(prompt, audit_id)
-        if raw_output:
-            return parse_inference_output(raw_output)
-        else:
-            return {
-                "hypothesis": "Error", 
-                "method": "Error", 
-                "reasoning_steps": "Inference failed or timed out.", 
-                "conclusion": "Audit aborted due to technical failure."
-            }
+        """Falls back to rule-based logic (no external API required)."""
+        return self._generate_rule_based_action(claim, dataset)
 
 class HallucinatingAgent(HypothesisAgent):
     def _generate_rule_based_action(self, claim, dataset):
