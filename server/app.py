@@ -80,10 +80,37 @@ if not st.session_state.entered:
             st.session_state.current_obs = st.session_state.env.reset()
             st.rerun()
 
-else:
+    # --- SIDEBAR (Logic Calibration) ---
+    with st.sidebar:
+        st.markdown("<div class='chapter-tag'>Logic Calibration</div>", unsafe_allow_html=True)
+        use_custom = st.toggle("Manual Override", value=False, help="Invert the kernel logic to use custom artifacts.")
+        
+        if use_custom:
+            st.markdown("---")
+            custom_claim = st.text_area("Hypothesis Claim", value=obs.claim, height=100)
+            st.markdown("<div style='font-size: 0.7rem; color: #666; margin-bottom: 0.5rem;'>FACT MATRIX (JSON)</div>", unsafe_allow_html=True)
+            custom_dataset_json = st.text_area("truth_matrix_entry", value=json.dumps(obs.dataset, indent=2), height=250, label_visibility="collapsed")
+            col_v1, col_v2 = st.columns(2)
+            with col_v1:
+                custom_indep = st.text_input("X-Axis", value=obs.independent_var)
+            with col_v2:
+                custom_dep = st.text_input("Y-Axis", value=obs.dependent_var)
+            
+            try:
+                final_dataset = json.loads(custom_dataset_json)
+                st.success("Matrix Validated", icon="✅")
+            except Exception as e:
+                st.error("Matrix Format Error", icon="❌")
+                final_dataset = obs.dataset
+        else:
+            custom_claim = obs.claim
+            final_dataset = obs.dataset
+            custom_indep = obs.independent_var
+            custom_dep = obs.dependent_var
+
     col_nav, col_stat = st.columns([1.5, 7.5])
     with col_nav:
-        if st.button(" RESET"): reset_system()
+        if st.button("← RESET"): reset_system()
     with col_stat:
         st.markdown(f"<div style='text-align:right;'><div class='system-badge'>ID: {st.session_state.audit_id}</div></div>", unsafe_allow_html=True)
 
@@ -91,34 +118,18 @@ else:
     
     st.markdown("<div style='height: 8vh;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='chapter-tag'>Subject Inquiry</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='chapter-title'>\"{custom_claim}\"</div>", unsafe_allow_html=True)
     
-    use_custom = st.toggle("Enable Manual Input Override", value=False)
-    
-    if use_custom:
-        edited_claim = st.text_area("Hypothesis Claim", value=obs.claim)
-        st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Dataset Artifacts</div>", unsafe_allow_html=True)
-        edited_dataset = st.data_editor(obs.dataset, num_rows="dynamic", use_container_width=True)
-        col_v1, col_v2 = st.columns(2)
-        with col_v1:
-            edited_indep = st.text_input("Independent Variable", value=obs.independent_var)
-        with col_v2:
-            edited_dep = st.text_input("Dependent Variable", value=obs.dependent_var)
-    else:
-        st.markdown(f"<div class='chapter-title'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
-        st.markdown("<div class='chapter-tag'>Dataset Artifacts</div>", unsafe_allow_html=True)
-        st.table(obs.dataset)
-        edited_claim = obs.claim
-        edited_dataset = obs.dataset
-        edited_indep = obs.independent_var
-        edited_dep = obs.dependent_var
+    st.markdown("<div class='chapter-tag'>Dataset Artifacts</div>", unsafe_allow_html=True)
+    st.table(final_dataset)
     
     st.markdown("<div style='height: 4rem;'></div>", unsafe_allow_html=True)
     if st.button("EXECUTE AUDIT", type="primary"):
         with st.spinner("Decoding reasoning artifacts..."):
-            st.session_state.current_obs.claim = edited_claim
-            st.session_state.current_obs.dataset = edited_dataset
-            st.session_state.current_obs.independent_var = edited_indep
-            st.session_state.current_obs.dependent_var = edited_dep
+            st.session_state.current_obs.claim = custom_claim
+            st.session_state.current_obs.dataset = final_dataset
+            st.session_state.current_obs.independent_var = custom_indep
+            st.session_state.current_obs.dependent_var = custom_dep
             if hasattr(st.session_state.env, '_current_state') and st.session_state.env._current_state:
                 st.session_state.env._current_state.current_task = st.session_state.current_obs
                 
@@ -126,7 +137,14 @@ else:
             # Baseline simulation call
             from server.agent import HypothesisAgent
             agent = HypothesisAgent(use_llm=True)
-            task_dict = obs.dict()
+            # Use dictionary representation for passing to agent
+            task_dict = {
+                "task_id": st.session_state.current_obs.task_id,
+                "claim": custom_claim,
+                "dataset": final_dataset,
+                "independent_var": custom_indep,
+                "dependent_var": custom_dep
+            }
             action_dict = agent.generate_action(task_dict, st.session_state.audit_id)
             
             # Map to OpenEnv Action
