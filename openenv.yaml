@@ -1,0 +1,17 @@
+name: hypothesis-intelligence-engine
+version: 1.0.3
+description: "AI logic auditing and hallucination detection system. Evaluates agent ability to ground hypotheses in provided dataset artifacts."
+tags:
+  - logic-auditing
+  - hallucination-detection
+  - hypothesis-testing
+tasks:
+  - id: baseline-correlation
+    difficulty: easy
+    description: "Verify a simple linear relationship in small datasets."
+  - id: nonlinear-dependency
+    difficulty: medium
+    description: "Detect nonlinear anomalies and avoid over-extrapolation."
+  - id: confounding-variables
+    difficulty: hard
+    description: "Audit complex datasets with confounding variables and high noise levels."

@@ -1,0 +1,19 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Expose port for OpenEnv server / Streamlit
+EXPOSE 8000
+EXPOSE 8501
+
+# Default command is to run the OpenEnv server
+CMD ["python", "app.py"]
