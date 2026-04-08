@@ -83,27 +83,57 @@ if not st.session_state.entered:
 else:
     obs = st.session_state.current_obs
 
-    # --- SIDEBAR (Logic Calibration) ---
+    # --- SIDEBAR (Logic Calibration & Database) ---
     with st.sidebar:
-        st.markdown("<div class='chapter-tag'>Logic Calibration</div>", unsafe_allow_html=True)
-        use_custom = st.toggle("Manual Override", value=False, help="Invert the kernel logic to use custom artifacts.")
+        st.markdown("<div class='chapter-tag'>Database Explorer</div>", unsafe_allow_html=True)
+        
+        # Get list of all tasks from the environment
+        all_tasks = st.session_state.env.tasks
+        task_options = [f"{t['id']} ({t['difficulty'].upper()})" for t in all_tasks]
+        
+        # Find current index
+        current_idx = 0
+        for i, t in enumerate(all_tasks):
+            if t["id"] == obs.task_id:
+                current_idx = i
+                break
+                
+        selected_option = st.selectbox("Select Research Scenario", task_options, index=current_idx)
+        selected_task_id = selected_option.split(" (")[0]
+        
+        if selected_task_id != obs.task_id:
+            new_task_data = next(t for t in all_tasks if t["id"] == selected_task_id)
+            from server.env import Observation
+            st.session_state.current_obs = Observation(
+                task_id=new_task_data["id"],
+                claim=new_task_data["claim"],
+                dataset=new_task_data["dataset"],
+                independent_var=new_task_data["independent_var"],
+                dependent_var=new_task_data["dependent_var"]
+            )
+            st.rerun()
+
+        st.markdown("---")
+        st.markdown("<div class='chapter-tag'>Manual JSON Audit (Truth Matrix)</div>", unsafe_allow_html=True)
+        use_custom = st.toggle("Enable JSON Matrix Override", value=False, help="Enable this to manually edit the Fact Matrix using JSON format.")
         
         if use_custom:
-            st.markdown("---")
-            custom_claim = st.text_area("Hypothesis Claim", value=obs.claim, height=100)
-            st.markdown("<div style='font-size: 0.7rem; color: #666; margin-bottom: 0.5rem;'>FACT MATRIX (JSON)</div>", unsafe_allow_html=True)
-            custom_dataset_json = st.text_area("truth_matrix_entry", value=json.dumps(obs.dataset, indent=2), height=250, label_visibility="collapsed")
+            st.markdown("<div style='font-size: 0.7rem; color: #888; margin-bottom: 0.5rem;'>EDIT HYPOTHESIS CLAIM</div>", unsafe_allow_html=True)
+            custom_claim = st.text_area("claim_edit", value=obs.claim, height=80, label_visibility="collapsed")
+            st.markdown("<div style='font-size: 0.7rem; color: #888; margin-top: 1rem; margin-bottom: 0.5rem;'>EDIT FACT MATRIX (JSON)</div>", unsafe_allow_html=True)
+            custom_dataset_json = st.text_area("json_truth_matrix", value=json.dumps(obs.dataset, indent=2), height=250, label_visibility="collapsed")
+            
             col_v1, col_v2 = st.columns(2)
             with col_v1:
-                custom_indep = st.text_input("X-Axis", value=obs.independent_var)
+                custom_indep = st.text_input("X-Axis (Input)", value=obs.independent_var)
             with col_v2:
-                custom_dep = st.text_input("Y-Axis", value=obs.dependent_var)
+                custom_dep = st.text_input("Y-Axis (Target)", value=obs.dependent_var)
             
             try:
                 final_dataset = json.loads(custom_dataset_json)
-                st.success("Matrix Validated", icon="✅")
+                st.success("JSON Validated", icon="✨")
             except Exception as e:
-                st.error("Matrix Format Error", icon="❌")
+                st.error("JSON Syntax Error", icon="⚠️")
                 final_dataset = obs.dataset
         else:
             custom_claim = obs.claim
