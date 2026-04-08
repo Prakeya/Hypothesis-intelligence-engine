@@ -80,6 +80,7 @@ if not st.session_state.entered:
             st.session_state.current_obs = st.session_state.env.reset()
             st.rerun()
 
+else:
     obs = st.session_state.current_obs
 
     # --- SIDEBAR (Logic Calibration) ---
