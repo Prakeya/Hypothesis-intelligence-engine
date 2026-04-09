@@ -50,7 +50,8 @@ class HypothesisEnv:
                 ],
                 "independent_var": "hours",
                 "dependent_var": "marks",
-                "ground_truth_verdict": "Supported"
+                "ground_truth_verdict": "Supported",
+                "domain": "Education"
             },
             {
                 "id": "bench-02",
@@ -64,7 +65,8 @@ class HypothesisEnv:
                 ],
                 "independent_var": "cups",
                 "dependent_var": "sleep",
-                "ground_truth_verdict": "Supported"
+                "ground_truth_verdict": "Supported",
+                "domain": "Health"
             },
             {
                 "id": "bench-03",
@@ -77,7 +79,8 @@ class HypothesisEnv:
                 ],
                 "independent_var": "temp",
                 "dependent_var": "sales",
-                "ground_truth_verdict": "Supported"
+                "ground_truth_verdict": "Supported",
+                "domain": "Retail"
             },
             {
                 "id": "bench-04",
@@ -90,7 +93,8 @@ class HypothesisEnv:
                 ],
                 "independent_var": "sugar_g",
                 "dependent_var": "weight",
-                "ground_truth_verdict": "Refuted"
+                "ground_truth_verdict": "Refuted",
+                "domain": "Nutrition"
             },
             {
                 "id": "bench-05",
@@ -103,7 +107,50 @@ class HypothesisEnv:
                 ],
                 "independent_var": "color",
                 "dependent_var": "speed",
-                "ground_truth_verdict": "Inconclusive"
+                "ground_truth_verdict": "Inconclusive",
+                "domain": "Sports"
+            },
+            {
+                "id": "bench-06",
+                "mode": "benchmark",
+                "claim": "Higher interest rates reduce loan applications.",
+                "dataset": [
+                    {"rate": 2.0, "apps": 1000},
+                    {"rate": 4.5, "apps": 700},
+                    {"rate": 7.0, "apps": 350}
+                ],
+                "independent_var": "rate",
+                "dependent_var": "apps",
+                "ground_truth_verdict": "Supported",
+                "domain": "Finance"
+            },
+             {
+                "id": "bench-07",
+                "mode": "benchmark",
+                "claim": "Increased ad spend results in lower total revenue.",
+                "dataset": [
+                    {"ad_spend": 1000, "revenue": 5000},
+                    {"ad_spend": 5000, "revenue": 15000},
+                    {"ad_spend": 10000, "revenue": 25000}
+                ],
+                "independent_var": "ad_spend",
+                "dependent_var": "revenue",
+                "ground_truth_verdict": "Refuted",
+                "domain": "Marketing"
+            },
+            {
+                "id": "bench-08",
+                "mode": "benchmark",
+                "claim": "Daily meditation improves memory recall.",
+                "dataset": [
+                    {"meditation_mins": 10, "recall": 80},
+                    {"meditation_mins": 20, "recall": 82},
+                    {"meditation_mins": 30, "recall": 79}
+                ],
+                "independent_var": "meditation_mins",
+                "dependent_var": "recall",
+                "ground_truth_verdict": "Inconclusive",
+                "domain": "Psychology"
             }
         ]
         self._current_state: Optional[State] = None

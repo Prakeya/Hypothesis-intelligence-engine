@@ -49,14 +49,30 @@ def evaluate_action(action, task, ground_truth=None):
     # Incorrect verdict OR Hallucination: 0.0
     
     reward = 0.0
+    breakdown = []
+    
     if hallucination_detected:
         reward = 0.0
+        breakdown.append({"metric": "Hallucination Check", "status": "FAIL", "points": "-1.0"})
+        breakdown.append({"metric": "Verdict Accuracy", "status": "VOID", "points": "0.0"})
+        breakdown.append({"metric": "Logic Baseline", "status": "VOID", "points": "0.0"})
     elif verdict_correct:
         reward = 1.0
+        breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2"})
+        breakdown.append({"metric": "Logic Baseline", "status": "PASS", "points": "+0.3"})
+        breakdown.append({"metric": "Verdict Accuracy", "status": "PASS", "points": "+0.5"})
     elif not verdict_correct and not hallucination_detected:
         # Check if reasoning at least identified the variables correctly
         if ind_var in reasoning and dep_var in reasoning:
             reward = 0.5
+            breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2"})
+            breakdown.append({"metric": "Logic Baseline", "status": "PASS", "points": "+0.3"})
+            breakdown.append({"metric": "Verdict Accuracy", "status": "FAIL", "points": "0.0"})
+        else:
+            reward = 0.0
+            breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2"})
+            breakdown.append({"metric": "Logic Baseline", "status": "FAIL", "points": "-0.2"})
+            breakdown.append({"metric": "Verdict Accuracy", "status": "FAIL", "points": "0.0"})
             
     return {
         "reward": reward,
@@ -64,6 +80,7 @@ def evaluate_action(action, task, ground_truth=None):
         "hallucinated_points": hallucinated_points,
         "verdict_correct": verdict_correct,
         "logic_consistency": 1.0 if verdict_correct else 0.5,
-        "info": "Hallucination Detected" if hallucination_detected else "Logic Audited"
+        "info": "Hallucinated Context" if hallucination_detected else "Logic Validated",
+        "breakdown": breakdown
     }
 

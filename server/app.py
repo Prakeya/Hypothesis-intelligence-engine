@@ -87,20 +87,63 @@ header, footer, [data-testid="stHeader"] {visibility: hidden;}
     color: #AAA;
 }
 
-/* Glass Box UI Layout */
+/* Protocol Cards Enhancements */
 .protocol-card {
-    background: #1C1C1E;
-    border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 2.5rem;
-    text-align: center; margin-bottom: 1.5rem; transition: transform 0.2s;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    background: linear-gradient(145deg, #18181A 0%, #121214 100%);
+    border: 1px solid rgba(255, 255, 255, 0.04); 
+    border-radius: 24px; 
+    padding: 3rem 2rem;
+    text-align: center; 
+    margin-bottom: 2rem; 
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
 }
-.protocol-card h3 { font-family: 'Outfit', sans-serif; font-weight: 600; }
+.protocol-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+    background: linear-gradient(90deg, #FFFFFF, rgba(255,255,255,0.1));
+    opacity: 0.2; transition: opacity 0.3s ease;
+}
+.protocol-card:hover { transform: translateY(-4px); border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+.protocol-card:hover::before { opacity: 1; }
+.protocol-card h3 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.6rem; margin-bottom: 1rem; color: #FFF; letter-spacing: 0.5px; }
+.protocol-card p { color: #888; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem; font-weight: 300;}
+
 .engine-card {
-    background: #1C1C1E;
+    background: linear-gradient(145deg, #1C1C1E 0%, #17171A 100%);
     border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 2rem;
     height: 100%; margin-bottom: 1rem;
+    transition: all 0.2s ease;
 }
+.engine-card:hover { border-color: rgba(255, 255, 255, 0.15); }
 .engine-card h4 { font-family: 'Outfit', sans-serif; font-weight: 600; margin-bottom: 0.5rem; }
+
+/* Logic Node UI */
+.logic-node {
+    background: #151518;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+.logic-node-header {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 0.8rem;
+}
+.logic-node-step {
+    font-size: 0.75rem; color: #666; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-right: 1rem;
+}
+.logic-node-title {
+    font-family: 'Outfit', sans-serif; font-size: 1.3rem; color: #EAEAEA; font-weight: 600;
+}
+.logic-node-body {
+    font-family: 'Inter', sans-serif; color: #BBB; font-size: 1rem; line-height: 1.7; font-weight: 300;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -134,15 +177,15 @@ else:
     # 1. Protocol Selection
     col_bench, col_cust = st.columns(2)
     with col_bench:
-        st.markdown("<div class='protocol-card'><h3>Benchmark Protocol</h3><p style='color:#888'>Pre-defined evaluation tasks with established ground truth.</p></div>", unsafe_allow_html=True)
-        if st.button("Activate Benchmark", use_container_width=True, type="primary" if st.session_state.mode == "benchmark" else "secondary"):
+        st.markdown("<div class='protocol-card'><h3>Benchmark Protocol</h3><p>Engage pre-calibrated evaluation tasks spanning diverse domains. Validate the engine's inferential accuracy against established mathematical ground truths.</p></div>", unsafe_allow_html=True)
+        if st.button("Activate Benchmarks", use_container_width=True, type="primary" if st.session_state.mode == "benchmark" else "secondary"):
             st.session_state.mode = "benchmark"
             st.session_state.agent_output = None
             st.rerun()
             
     with col_cust:
-        st.markdown("<div class='protocol-card'><h3>Custom Protocol</h3><p style='color:#888'>Inject your own telemetry matrix and hypothesis claim.</p></div>", unsafe_allow_html=True)
-        if st.button("Activate Custom", use_container_width=True, type="primary" if st.session_state.mode == "custom" else "secondary"):
+        st.markdown("<div class='protocol-card'><h3>Custom Injector</h3><p>Inject custom hypotheses and raw telemetry matrices directly into the inference core. Probe structural limits and perform open-ended logical exploration.</p></div>", unsafe_allow_html=True)
+        if st.button("Activate Custom Node", use_container_width=True, type="primary" if st.session_state.mode == "custom" else "secondary"):
             st.session_state.mode = "custom"
             st.session_state.current_obs = st.session_state.env.reset(mode="custom")
             st.session_state.agent_output = None
@@ -158,8 +201,10 @@ else:
         cols = st.columns(3)
         for i, t in enumerate(all_tasks):
             with cols[i % 3]:
-                st.markdown(f"<div class='engine-card'><h4 style='color:#FFF;'>Hypothesis Strategy {i+1}</h4><div style='font-size:0.9rem; color:#aaa; margin-bottom:1rem; min-height:40px;'>\"{t['claim']}\"</div></div>", unsafe_allow_html=True)
-                if st.button("Evaluate Strategy", key=f"btn_{t['id']}", use_container_width=True):
+                domain = t.get("domain", "General")
+                badge_html = f"<span style='background:rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; color: #FFF; font-weight: 600; text-transform: uppercase;'>{domain}</span>"
+                st.markdown(f"<div class='engine-card' style='display: flex; flex-direction: column; justify-content: space-between;'><div style='margin-bottom: 1rem;'>{badge_html}</div><h4 style='color:#FFF; font-size:1.1rem; line-height:1.4; margin-bottom: 1rem;'>\"{t['claim']}\"</h4></div>", unsafe_allow_html=True)
+                if st.button("EXECUTE AUDIT", key=f"btn_{t['id']}", use_container_width=True):
                     # Load the environment and auto-execute the agent
                     st.session_state.current_obs = Observation(
                         mode_identifier="benchmark", task_id=t["id"], claim=t["claim"],
@@ -221,26 +266,72 @@ else:
         st.markdown("<div class='chapter-tag'>Active Claim Under Test</div>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size: 1.5rem; font-style: italic; color: #fff; margin-bottom: 2rem;'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='chapter-tag'>Robust Explanation & Verdict</div>", unsafe_allow_html=True)
+        st.markdown("<div id='logic-anchor' class='chapter-tag'>Robust Explanation & Verdict</div>", unsafe_allow_html=True)
         
         color = "#FFFFFF"
         st.markdown(f"<div class='glass-panel'><div style='font-size: 0.8rem; font-weight: 800; color: #888; text-transform: uppercase;'>FINAL VERDICT</div><div style='font-size: 3rem; font-family: Lora, serif; color: {color}; margin-top: 0.5rem;'>{out['verdict']}</div></div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Reasoning Trace</div>", unsafe_allow_html=True)
-        st.code(out['reasoning'], language="text")
+        st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Formal Logic Trace</div>", unsafe_allow_html=True)
+        
+        import re
+        reasoning_text = out['reasoning']
+        steps = reasoning_text.split('Step ')
+        for step in steps:
+            if not step.strip(): continue
+            parts = step.split('\n', 1)
+            # Ensure safe splitting of titles
+            title_parts = parts[0].split(':', 1)
+            step_num = f"STEP {title_parts[0].strip()}"
+            title_text = title_parts[1].strip() if len(title_parts) > 1 else title_parts[0].strip()
+            
+            step_body = parts[1].replace('\n', '<br>') if len(parts) > 1 else ""
+            step_body = re.sub(r'\*\*(.*?)\*\*', r'<strong style="color: #FFF; font-weight: 600;">\1</strong>', step_body)
+            
+            html_block = f"""
+            <div class='logic-node'>
+                <div class='logic-node-header'>
+                    <span class='logic-node-step'>{step_num}</span>
+                    <span class='logic-node-title'>{title_text}</span>
+                </div>
+                <div class='logic-node-body'>{step_body}</div>
+            </div>
+            """
+            st.markdown(html_block, unsafe_allow_html=True)
 
-        st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Conclusion</div>", unsafe_allow_html=True)
-        conclusion_text = f"Based on the formalized logic trace and the derived actions, the active claim is heavily observed to be **{out['verdict']}**. Refer to the reasoning trace for an indepth semantic breakdown."
-        st.markdown(f"<div class='glass-panel'><p style='font-size: 1.1rem; line-height: 1.6; color:#EEE;'>{conclusion_text}</p></div>", unsafe_allow_html=True)
+        st.markdown("<div class='chapter-tag' style='margin-top: 3rem;'>Axiomatic Conclusion</div>", unsafe_allow_html=True)
+        conclusion_text = f"Based on the rigorous mathematical trace synthesized above, the deterministic claim is structurally <strong>{out['verdict']}</strong> by the empirical matrix."
+        st.markdown(f"<div class='glass-panel' style='border-left: 5px solid #EAEAEA; background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(28,28,30,1) 100%);'><p style='font-size: 1.3rem; font-weight: 400; line-height: 1.6; color:#F5F5F5; margin: 0; font-family: Outfit, sans-serif;'>{conclusion_text}</p></div>", unsafe_allow_html=True)
+
+        st.markdown("<div class='chapter-tag' style='margin-top: 4rem; text-align: center;'>Reward Allocation</div>", unsafe_allow_html=True)
+        
+        info_data = eval_data.get('info', {})
+        breakdown_html = ""
+        if 'breakdown' in info_data:
+            breakdown_html += "<div style='display: flex; flex-direction: column; max-width: 600px; margin: 0 auto 2rem auto; background: rgba(255,255,255,0.02); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05);'>"
+            for b in info_data['breakdown']:
+                color = "#4ade80" if "PASS" in b['status'] else ("#f87171" if "FAIL" in b['status'] else "#777")
+                bg_color = "rgba(74, 222, 128, 0.1)" if "PASS" in b['status'] else ("rgba(248, 113, 113, 0.1)" if "FAIL" in b['status'] else "rgba(255,255,255,0.05)")
+                breakdown_html += f"<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; padding-bottom:0.8rem; border-bottom:1px solid rgba(255,255,255,0.02);'>"
+                breakdown_html += f"<span style='color:#AAA; font-size:0.95rem; font-weight:500; font-family: Inter, sans-serif;'>{b['metric']}</span>"
+                breakdown_html += f"<span style='color:{color}; background: {bg_color}; padding: 4px 12px; border-radius: 20px; font-family:Outfit,sans-serif; font-weight:700; font-size:0.9rem;'>{b['points']} <span style='opacity:0.7; font-size:0.75rem;'>{b['status']}</span></span>"
+                breakdown_html += "</div>"
+            breakdown_html += "</div>"
+
+        st.markdown(breakdown_html, unsafe_allow_html=True)
 
         col1, col2, col3 = st.columns(3)
         with col1:
-             st.markdown(f"<div class='glass-panel'><div class='chapter-tag' style='margin-bottom:0.5rem;'>REWARD</div><div style='font-size:1.5rem; font-weight:700;'>{eval_data['reward']}</div></div>", unsafe_allow_html=True)
+             st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>FINAL REWARD</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{eval_data['reward']}</div></div>", unsafe_allow_html=True)
         with col2:
-             st.markdown(f"<div class='glass-panel'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE</div><div style='font-size:1.5rem; font-weight:700;'>{out['confidence_score']}</div></div>", unsafe_allow_html=True)
+             st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE SCORE</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{out['confidence_score']}</div></div>", unsafe_allow_html=True)
         with col3:
-             scolor = "#FFFFFF"
-             st.markdown(f"<div class='glass-panel'><div class='chapter-tag' style='margin-bottom:0.5rem;'>STATUS</div><div style='font-size:1.5rem; font-weight:700; color:{scolor};'>{eval_data['info']['info']}</div></div>", unsafe_allow_html=True)
+             st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>STATUS</div><div style='font-size:1.5rem; font-family:Outfit,sans-serif; font-weight:600; color:#EAEAEA; display:flex; align-items:center; justify-content:center; height:3rem;'>{info_data.get('info', 'Ok')}</div></div>", unsafe_allow_html=True)
+
+        import streamlit.components.v1 as components
+        components.html(
+            "<script>window.parent.document.querySelector('.main').scrollTo({top: window.parent.document.querySelector('.main').scrollHeight, behavior: 'smooth'});</script>",
+            height=0, width=0
+        )
 
 def main():
     import subprocess
