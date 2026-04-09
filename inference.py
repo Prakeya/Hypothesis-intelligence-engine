@@ -23,14 +23,14 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]):
     print(f"[END] success={success} steps={steps} score={score} rewards={rewards}")
 
 # --- Inference Logic ---
-def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last_reward: float):
+def get_model_message(client: OpenAI, step: int, claim: str, evidence: List, last_reward: float):
     prompt = f"""
     Step {step} | Last Reward: {last_reward}
     Audit Target: {claim}
-    Data Artifacts: {dataset}
+    Evidence Block: {evidence}
     
     Task: Conduct a high-performance logic audit.
-    Output JSON with: hypothesis, method, reasoning_steps, conclusion.
+    Output JSON with: verdict (Supported, Refuted, or Inconclusive), reasoning, and confidence_score (0.0 to 1.0).
     """
     try:
         response = client.chat.completions.create(
@@ -43,10 +43,9 @@ def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last
     except Exception as e:
         print(f"[DEBUG] Model request failed: {e}")
         return json.dumps({
-            "hypothesis": "Error",
-            "method": "Error",
-            "reasoning_steps": str(e),
-            "conclusion": "Audit failure."
+            "verdict": "Inconclusive",
+            "reasoning": str(e),
+            "confidence_score": 0.0
         })
 
 async def main():
@@ -57,7 +56,7 @@ async def main():
     MAX_TOTAL_REWARD = 1.0
     
     # Initialize
-    obs = env.reset()
+    obs = env.reset(mode="benchmark")
     log_start(task=obs.task_id, env="hypothesis-intelligence-v4", model=MODEL_NAME)
     
     rewards = []
@@ -67,15 +66,14 @@ async def main():
     try:
         # Step Loop (One-shot audit for this env)
         for step in range(1, MAX_STEPS + 1):
-            raw_action = get_model_message(client, step, obs.claim, obs.dataset, 0.0)
+            raw_action = get_model_message(client, step, obs.claim, obs.evidence_block, 0.0)
             action_data = json.loads(raw_action)
             
             # Map to Typed Action
             action = Action(
-                hypothesis=action_data.get("hypothesis", ""),
-                method=action_data.get("method", ""),
-                reasoning_steps=action_data.get("reasoning_steps", ""),
-                conclusion=action_data.get("conclusion", "")
+                verdict=action_data.get("verdict", "Inconclusive"),
+                reasoning=action_data.get("reasoning", ""),
+                confidence_score=action_data.get("confidence_score", 0.5)
             )
             
             reward_obj = env.step(action)
@@ -95,6 +93,7 @@ async def main():
         
     finally:
         log_end(success=success, steps=steps_taken, score=final_score, rewards=rewards)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

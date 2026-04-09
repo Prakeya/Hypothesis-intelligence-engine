@@ -8,56 +8,86 @@ class HypothesisAgent:
     def generate_action(self, state, audit_id="SYSTEM"):
         """
         Generates an action based on the current state.
-        Now supports audit_id for structured logging.
+        Uses robust multi-step reasoning to produce a verdict.
         """
         claim = state["claim"]
-        dataset = state["dataset"]
+        evidence = state["evidence_block"]
+        ind_var = state["independent_var"]
+        dep_var = state["dependent_var"]
         
-        if self.use_llm:
-            return self._generate_llm_action(claim, dataset, audit_id)
-        else:
-            return self._generate_rule_based_action(claim, dataset)
+        # 1. Signal Extraction & Hallucination Check
+        x_values = [d.get(ind_var) for d in evidence if ind_var in d]
+        y_values = [d.get(dep_var) for d in evidence if dep_var in d]
+        
+        reasoning = "Step 1: Signal Extraction\n"
+        reasoning += f"- Identified independent variable: '{ind_var}' and dependent variable: '{dep_var}'.\n"
+        reasoning += f"- Extracted {len(evidence)} valid data points from the evidence block.\n"
+        
+        if not x_values or not y_values:
+            return {
+                "verdict": "Inconclusive",
+                "reasoning": reasoning + "Step 2: Analysis\n- Insufficient data points to perform trend analysis.",
+                "confidence_score": 0.1
+            }
 
-    def _generate_rule_based_action(self, claim, dataset):
-        """Standard rule-based agent logic."""
-        keys = list(dataset[0].keys())
-        x_var = keys[0]
-        y_var = keys[1]
+        # 2. Contradiction Detection & Trend Analysis
+        # Sort by x for trend analysis
+        paired = sorted(zip(x_values, y_values))
+        sorted_x, sorted_y = zip(*paired)
         
-        sorted_data = sorted(dataset, key=lambda d: d[x_var])
-        y_values = [d[y_var] for d in sorted_data]
-        is_increasing = all(y_values[i] <= y_values[i+1] for i in range(len(y_values)-1))
+        is_increasing = all(sorted_y[i] <= sorted_y[i+1] for i in range(len(sorted_y)-1))
+        is_decreasing = all(sorted_y[i] >= sorted_y[i+1] for i in range(len(sorted_y)-1))
         
-        hypothesis = f"There is a {'positive' if is_increasing else 'complex'} relationship between {x_var} and {y_var}."
-        method = f"I will analyze the trend of {y_var} as {x_var} increases using the provided {len(dataset)} data points."
-        reasoning_steps = (
-            f"1. Identified independent variable: {x_var} and dependent variable: {y_var}.\n"
-            f"2. Observed {len(dataset)} data points in the provided set.\n"
-            f"3. Compared endpoints and intermediate monotonic trends."
-        )
-        
+        reasoning += "Step 2: Trend Analysis\n"
         if is_increasing:
-            conclusion = f"The data shows a consistent positive trend. As {x_var} increases, {y_var} also increases. For example, when {x_var} is {sorted_data[0][x_var]}, {y_var} is {sorted_data[0][y_var]}."
+            reasoning += f"- Detected a consistent positive trend: {dep_var} increases with {ind_var}.\n"
+        elif is_decreasing:
+            reasoning += f"- Detected a consistent negative trend: {dep_var} decreases as {ind_var} increases.\n"
         else:
-            conclusion = f"The data does not show a strictly monotonic relationship. While {x_var} increases, {y_var} fluctuates."
+            reasoning += f"- Detected a non-monotonic or complex relationship between {ind_var} and {dep_var}.\n"
+
+        # 3. Final Synthesis & Verdict
+        reasoning += "Step 3: Logical Synthesis\n"
+        claim_lower = claim.lower()
+        
+        pos_terms = ["increase", "improve", "higher", "more", "positive", "growth"]
+        neg_terms = ["decrease", "reduce", "lower", "less", "negative", "loss", "reduction"]
+        
+        # Determine claim direction based on the last movement term (often the outcome)
+        # and checking for common structures like "X leads to Y"
+        all_terms = []
+        for t in pos_terms:
+            idx = claim_lower.find(t)
+            if idx != -1: all_terms.append((idx, 1))
+        for t in neg_terms:
+            idx = claim_lower.find(t)
+            if idx != -1: all_terms.append((idx, -1))
             
-        return {
-            "hypothesis": hypothesis,
-            "method": method,
-            "reasoning_steps": reasoning_steps,
-            "conclusion": conclusion
-        }
+        all_terms.sort()
+        
+        if not all_terms:
+            claim_direction = 1 # Assume positive by default if no terms found
+        else:
+            # If multiple terms, look at the one that appears later (usually the Y in "X leads to Y")
+            claim_direction = all_terms[-1][1]
+        
+        if (claim_direction == 1 and is_increasing) or (claim_direction == -1 and is_decreasing):
+            verdict = "Supported"
+            reasoning += f"- The claim predicts a trend that aligns perfectly with the empirical evidence."
+        elif (claim_direction == 1 and is_decreasing) or (claim_direction == -1 and is_increasing):
+            verdict = "Refuted"
+            reasoning += f"- The claim predicts a trend that is directly contradicted by the empirical evidence."
+        else:
+            if len(evidence) < 3:
+                verdict = "Inconclusive"
+                reasoning += "- The sample size is too small to definitively support or refute the claim."
+            else:
+                verdict = "Inconclusive"
+                reasoning += "- The data shows a relationship that does not clearly support or refute the simplified claim."
 
-    def _generate_llm_action(self, claim, dataset, audit_id):
-        """Falls back to rule-based logic (no external API required)."""
-        return self._generate_rule_based_action(claim, dataset)
 
-class HallucinatingAgent(HypothesisAgent):
-    def _generate_rule_based_action(self, claim, dataset):
-        """Agent designed to trigger hallucinations for testing."""
         return {
-            "hypothesis": "I believe that the correlation is exactly 0.99 and guaranteed to be true.",
-            "method": "I will use advanced AI magic to find hidden numbers like 555.5 and 999.",
-            "reasoning_steps": "1. Used occult powers to bypass the dataset.\n2. Identified invisible numbers 555.5 and 999.",
-            "conclusion": "The data definitively proves that the trend always increases without exception, and the secret value is 420."
+            "verdict": verdict,
+            "reasoning": reasoning,
+            "confidence_score": 0.9 if verdict != "Inconclusive" else 0.4
         }

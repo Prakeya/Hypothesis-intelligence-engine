@@ -10,7 +10,7 @@ st.set_page_config(
     page_title="Hypothesis Intelligence",
     page_icon="",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # --- State Management ---
@@ -26,36 +26,81 @@ if "evaluation" not in st.session_state:
     st.session_state.evaluation = None
 if "audit_id" not in st.session_state:
     st.session_state.audit_id = str(uuid.uuid4())[:8].upper()
+if "mode" not in st.session_state:
+    st.session_state.mode = "benchmark"
 
-# --- Custom CSS (Glassy Professional) ---
+# --- Custom CSS (Modern Fintech UI) ---
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;800&display=swap');
 
-.stApp { background-color: #08090A; color: #E2E2E2; font-family: 'Inter', sans-serif; }
+.stApp { 
+    background-color: #0E0E10; 
+    color: #F0F0F0; 
+    font-family: 'Inter', sans-serif; 
+}
 header, footer, [data-testid="stHeader"] {visibility: hidden;}
 
-.glass-panel {
-    background: rgba(255, 255, 255, 0.01);
-    backdrop-filter: blur(15px);
-    border-radius: 12px;
-    padding: 3rem;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    margin-bottom: 2rem;
+/* Ambient Central Core Core */
+.block-container::before {
+    content: ""; position: fixed; top: 15%; left: 50%; transform: translateX(-50%); 
+    width: 350px; height: 60vw; border-radius: 40%;
+    background: radial-gradient(ellipse at center, #333333 0%, #555555 30%, #111111 70%, transparent 80%);
+    filter: blur(80px); opacity: 0.8; z-index: -10; pointer-events: none;
 }
 
-.hero-title { font-family: 'Lora', serif; font-size: 5rem; font-weight: 700; color: #FFFFFF; text-align: center; }
-.hero-subtitle { font-size: 0.7rem; font-weight: 900; color: #666; text-align: center; letter-spacing: 5px; text-transform: uppercase; }
 
-.chapter-tag { font-size: 0.6rem; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; color: #444; margin-bottom: 1.5rem; }
-.chapter-title { font-family: 'Lora', serif; font-size: 3.5rem; color: #FFFFFF; line-height: 1.1; margin-bottom: 2rem; }
+.glass-panel {
+    background: #1C1C1E;
+    border-radius: 24px;
+    padding: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.hero-title { font-family: 'Outfit', sans-serif; font-size: 5rem; font-weight: 800; color: #FFFFFF; text-align: center; line-height: 1.1; }
+.hero-subtitle { font-size: 0.8rem; font-weight: 700; color: #AAAAAA; text-align: center; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 1rem;}
+
+.chapter-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #777; margin-bottom: 1.5rem; }
+.chapter-title { font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 800; color: #FFFFFF; line-height: 1.2; margin-bottom: 2rem; }
 
 .stButton > button {
-    border-radius: 4px !important; font-weight: 800 !important; font-size: 0.65rem !important; padding: 1rem 3rem !important;
+    border-radius: 50px !important; font-weight: 700 !important; font-size: 0.85rem !important; padding: 1.2rem 3rem !important;
     border: 1px solid rgba(255,255,255,0.1) !important; background: transparent !important; color: #A0A0A0 !important;
+    backdrop-filter: blur(5px);
 }
-.stButton > button:hover { background: rgba(255, 255, 255, 0.05) !important; color: white !important; }
-.stButton > button[kind="primary"] { background: #FFFFFF !important; color: #08090A !important; }
+.stButton > button:hover { background: rgba(255, 255, 255, 0.1) !important; color: white !important; }
+.stButton > button[kind="primary"] { 
+    background: #FFFFFF !important; 
+    color: #0E0E10 !important; 
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.4);
+}
+
+.system-badge {
+    background: #28282C;
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #AAA;
+}
+
+/* Glass Box UI Layout */
+.protocol-card {
+    background: #1C1C1E;
+    border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 2.5rem;
+    text-align: center; margin-bottom: 1.5rem; transition: transform 0.2s;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.protocol-card h3 { font-family: 'Outfit', sans-serif; font-weight: 600; }
+.engine-card {
+    background: #1C1C1E;
+    border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 2rem;
+    height: 100%; margin-bottom: 1rem;
+}
+.engine-card h4 { font-family: 'Outfit', sans-serif; font-weight: 600; margin-bottom: 0.5rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -64,7 +109,7 @@ def reset_system():
     st.session_state.entered = False
     st.session_state.agent_output = None
     st.session_state.evaluation = None
-    st.session_state.current_obs = st.session_state.env.reset()
+    st.session_state.current_obs = st.session_state.env.reset(mode=st.session_state.mode)
     st.rerun()
 
 # --- ROUTER ---
@@ -77,133 +122,125 @@ if not st.session_state.entered:
     with col_btn:
         if st.button("Initialize Kernel", type="primary", use_container_width=True):
             st.session_state.entered = "active"
-            st.session_state.current_obs = st.session_state.env.reset()
+            # Ensure no mode is pre-selected
+            st.session_state.mode = None
             st.rerun()
 
 else:
-    obs = st.session_state.current_obs
+    if st.button("← SYSTEM REBOOT"): reset_system()
 
-    # --- SIDEBAR (Logic Calibration & Database) ---
-    with st.sidebar:
-        st.markdown("<div class='chapter-tag'>Database Explorer</div>", unsafe_allow_html=True)
+    st.markdown("<div class='chapter-title' style='text-align:center; margin-top:2rem;'>Protocol Selection</div>", unsafe_allow_html=True)
+    
+    # 1. Protocol Selection
+    col_bench, col_cust = st.columns(2)
+    with col_bench:
+        st.markdown("<div class='protocol-card'><h3>Benchmark Protocol</h3><p style='color:#888'>Pre-defined evaluation tasks with established ground truth.</p></div>", unsafe_allow_html=True)
+        if st.button("Activate Benchmark", use_container_width=True, type="primary" if st.session_state.mode == "benchmark" else "secondary"):
+            st.session_state.mode = "benchmark"
+            st.session_state.agent_output = None
+            st.rerun()
+            
+    with col_cust:
+        st.markdown("<div class='protocol-card'><h3>Custom Protocol</h3><p style='color:#888'>Inject your own telemetry matrix and hypothesis claim.</p></div>", unsafe_allow_html=True)
+        if st.button("Activate Custom", use_container_width=True, type="primary" if st.session_state.mode == "custom" else "secondary"):
+            st.session_state.mode = "custom"
+            st.session_state.current_obs = st.session_state.env.reset(mode="custom")
+            st.session_state.agent_output = None
+            st.rerun()
+
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 3rem 0; '>", unsafe_allow_html=True)
+
+    # 2. Engine Selection & Preview
+    if st.session_state.mode == "benchmark":
+        st.markdown("<div class='chapter-title' style='text-align:center;'>Target Strategy Engine</div>", unsafe_allow_html=True)
         
-        # Get list of all tasks from the environment
-        all_tasks = st.session_state.env.tasks
-        task_options = [f"{t['id']} ({t['difficulty'].upper()})" for t in all_tasks]
-        
-        # Find current index
-        current_idx = 0
+        all_tasks = st.session_state.env.benchmark_tasks
+        cols = st.columns(3)
         for i, t in enumerate(all_tasks):
-            if t["id"] == obs.task_id:
-                current_idx = i
-                break
-                
-        selected_option = st.selectbox("Select Research Scenario", task_options, index=current_idx)
-        selected_task_id = selected_option.split(" (")[0]
-        
-        if selected_task_id != obs.task_id:
-            new_task_data = next(t for t in all_tasks if t["id"] == selected_task_id)
-            new_obs = Observation(
-                task_id=new_task_data["id"],
-                claim=new_task_data["claim"],
-                dataset=new_task_data["dataset"],
-                independent_var=new_task_data["independent_var"],
-                dependent_var=new_task_data["dependent_var"]
-            )
-            st.session_state.current_obs = new_obs
-            # Properly update the environment state to reflect the manual switch
-            st.session_state.env._current_state = State(current_task=new_obs)
-            st.rerun()
+            with cols[i % 3]:
+                st.markdown(f"<div class='engine-card'><h4 style='color:#FFF;'>Hypothesis Strategy {i+1}</h4><div style='font-size:0.9rem; color:#aaa; margin-bottom:1rem; min-height:40px;'>\"{t['claim']}\"</div></div>", unsafe_allow_html=True)
+                if st.button("Evaluate Strategy", key=f"btn_{t['id']}", use_container_width=True):
+                    # Load the environment and auto-execute the agent
+                    st.session_state.current_obs = Observation(
+                        mode_identifier="benchmark", task_id=t["id"], claim=t["claim"],
+                        evidence_block=t["dataset"], independent_var=t["independent_var"], dependent_var=t["dependent_var"]
+                    )
+                    st.session_state.env._current_state = State(current_task=st.session_state.current_obs)
+                    
+                    with st.spinner("Executing Logic Audit..."):
+                        time.sleep(0.5)
+                        from server.agent import HypothesisAgent
+                        agent = HypothesisAgent(use_llm=False)
+                        action_dict = agent.generate_action(st.session_state.current_obs.dict(), st.session_state.audit_id)
+                        action = Action(**action_dict)
+                        reward = st.session_state.env.step(action)
+                        
+                        st.session_state.agent_output = action_dict
+                        st.session_state.evaluation = reward.dict()
+                    st.rerun()
 
-        st.markdown("---")
-        st.markdown("<div class='chapter-tag'>Manual JSON Audit (Truth Matrix)</div>", unsafe_allow_html=True)
-        use_custom = st.toggle("Enable JSON Matrix Override", value=False, help="Enable this to manually edit the Fact Matrix using JSON format.")
-        
-        if use_custom:
-            st.markdown("<div style='font-size: 0.7rem; color: #888; margin-bottom: 0.5rem;'>EDIT HYPOTHESIS CLAIM</div>", unsafe_allow_html=True)
-            custom_claim = st.text_area("claim_edit", value=obs.claim, height=80, label_visibility="collapsed")
-            st.markdown("<div style='font-size: 0.7rem; color: #888; margin-top: 1rem; margin-bottom: 0.5rem;'>EDIT FACT MATRIX (JSON)</div>", unsafe_allow_html=True)
-            custom_dataset_json = st.text_area("json_truth_matrix", value=json.dumps(obs.dataset, indent=2), height=250, label_visibility="collapsed")
-            
+    elif st.session_state.mode == "custom":
+        st.markdown("<div class='chapter-title' style='text-align:center;'>Custom Injector</div>", unsafe_allow_html=True)
+        obs = st.session_state.current_obs
+        with st.container():
+            st.markdown("<div class='glass-panel'>", unsafe_allow_html=True)
+            custom_claim = st.text_area("Hypothesis Claim", value=obs.claim, height=80)
+            custom_dataset_json = st.text_area("Evidence Matrix (JSON Format)", value=json.dumps(obs.evidence_block, indent=2), height=250)
             col_v1, col_v2 = st.columns(2)
-            with col_v1:
-                custom_indep = st.text_input("X-Axis (Input)", value=obs.independent_var)
-            with col_v2:
-                custom_dep = st.text_input("Y-Axis (Target)", value=obs.dependent_var)
+            with col_v1: custom_indep = st.text_input("X-Axis Variable", value=obs.independent_var)
+            with col_v2: custom_dep = st.text_input("Y-Axis Variable", value=obs.dependent_var)
             
-            try:
-                final_dataset = json.loads(custom_dataset_json)
-                st.success("JSON Validated", icon="✨")
-            except Exception as e:
-                st.error("JSON Syntax Error", icon="⚠️")
-                final_dataset = obs.dataset
-        else:
-            custom_claim = obs.claim
-            final_dataset = obs.dataset
-            custom_indep = obs.independent_var
-            custom_dep = obs.dependent_var
-
-    col_nav, col_stat = st.columns([1.5, 7.5])
-    with col_nav:
-        if st.button("← RESET"): reset_system()
-    with col_stat:
-        st.markdown(f"<div style='text-align:right;'><div class='system-badge'>ID: {st.session_state.audit_id}</div></div>", unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 8vh;'></div>", unsafe_allow_html=True)
-    st.markdown("<div class='chapter-tag'>Subject Inquiry</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='chapter-title'>\"{custom_claim}\"</div>", unsafe_allow_html=True)
-    
-    st.markdown("<div class='chapter-tag'>Dataset Artifacts</div>", unsafe_allow_html=True)
-    st.table(final_dataset)
-    
-    st.markdown("<div style='height: 4rem;'></div>", unsafe_allow_html=True)
-    if st.button("EXECUTE AUDIT", type="primary"):
-        with st.spinner("Decoding reasoning artifacts..."):
-            st.session_state.current_obs.claim = custom_claim
-            st.session_state.current_obs.dataset = final_dataset
-            st.session_state.current_obs.independent_var = custom_indep
-            st.session_state.current_obs.dependent_var = custom_dep
-            if hasattr(st.session_state.env, '_current_state') and st.session_state.env._current_state:
-                st.session_state.env._current_state.current_task = st.session_state.current_obs
+            if st.button("EXECUTE AUDIT ON RAW DATA", type="primary", use_container_width=True):
+                try: final_dataset = json.loads(custom_dataset_json)
+                except: final_dataset = obs.evidence_block
                 
-            time.sleep(1)
-            # Baseline simulation call
-            from server.agent import HypothesisAgent
-            agent = HypothesisAgent(use_llm=True)
-            # Use dictionary representation for passing to agent
-            task_dict = {
-                "task_id": st.session_state.current_obs.task_id,
-                "claim": custom_claim,
-                "dataset": final_dataset,
-                "independent_var": custom_indep,
-                "dependent_var": custom_dep
-            }
-            action_dict = agent.generate_action(task_dict, st.session_state.audit_id)
-            
-            # Map to OpenEnv Action
-            action = Action(**action_dict)
-            reward = st.session_state.env.step(action)
-            
-            st.session_state.agent_output = action_dict
-            st.session_state.evaluation = reward.dict()
-            st.rerun()
+                st.session_state.current_obs.claim = custom_claim
+                st.session_state.current_obs.evidence_block = final_dataset
+                st.session_state.current_obs.independent_var = custom_indep
+                st.session_state.current_obs.dependent_var = custom_dep
+                st.session_state.env._current_state = State(current_task=st.session_state.current_obs)
+                
+                with st.spinner("Executing Logic Audit..."):
+                    time.sleep(0.5)
+                    from server.agent import HypothesisAgent
+                    agent = HypothesisAgent(use_llm=False)
+                    action_dict = agent.generate_action(st.session_state.current_obs.dict(), st.session_state.audit_id)
+                    action = Action(**action_dict)
+                    reward = st.session_state.env.step(action)
+                    st.session_state.agent_output = action_dict
+                    st.session_state.evaluation = reward.dict()
+                st.rerun()
 
+    # 3. Final Conclusion Display
     if st.session_state.agent_output:
+        st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 3rem 0; '>", unsafe_allow_html=True)
         out = st.session_state.agent_output
         eval_data = st.session_state.evaluation
+        obs = st.session_state.current_obs
+
+        st.markdown("<div class='chapter-tag'>Active Claim Under Test</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 1.5rem; font-style: italic; color: #fff; margin-bottom: 2rem;'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
+
+        st.markdown("<div class='chapter-tag'>Robust Explanation & Verdict</div>", unsafe_allow_html=True)
         
-        st.markdown("<div style='height: 10vh;'></div>", unsafe_allow_html=True)
-        st.markdown("<div class='chapter-tag'>Final Synthesis Verdict</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='chapter-title'>{out['conclusion']}</div>", unsafe_allow_html=True)
-        
-        st.markdown("<div class='chapter-tag'>Reasoning Logic</div>", unsafe_allow_html=True)
-        st.code(out['reasoning_steps'], language="text")
-        
-        col1, col2 = st.columns(2)
+        color = "#FFFFFF"
+        st.markdown(f"<div class='glass-panel'><div style='font-size: 0.8rem; font-weight: 800; color: #888; text-transform: uppercase;'>FINAL VERDICT</div><div style='font-size: 3rem; font-family: Lora, serif; color: {color}; margin-top: 0.5rem;'>{out['verdict']}</div></div>", unsafe_allow_html=True)
+
+        st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Reasoning Trace</div>", unsafe_allow_html=True)
+        st.code(out['reasoning'], language="text")
+
+        st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Conclusion</div>", unsafe_allow_html=True)
+        conclusion_text = f"Based on the formalized logic trace and the derived actions, the active claim is heavily observed to be **{out['verdict']}**. Refer to the reasoning trace for an indepth semantic breakdown."
+        st.markdown(f"<div class='glass-panel'><p style='font-size: 1.1rem; line-height: 1.6; color:#EEE;'>{conclusion_text}</p></div>", unsafe_allow_html=True)
+
+        col1, col2, col3 = st.columns(3)
         with col1:
-             st.markdown(f"<div class='glass-panel'>REWARD: {eval_data['reward']}</div>", unsafe_allow_html=True)
+             st.markdown(f"<div class='glass-panel'><div class='chapter-tag' style='margin-bottom:0.5rem;'>REWARD</div><div style='font-size:1.5rem; font-weight:700;'>{eval_data['reward']}</div></div>", unsafe_allow_html=True)
         with col2:
-             st.markdown(f"<div class='glass-panel'>HALLUCINATION: {eval_data['info']['hallucination_detected']}</div>", unsafe_allow_html=True)
+             st.markdown(f"<div class='glass-panel'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE</div><div style='font-size:1.5rem; font-weight:700;'>{out['confidence_score']}</div></div>", unsafe_allow_html=True)
+        with col3:
+             scolor = "#FFFFFF"
+             st.markdown(f"<div class='glass-panel'><div class='chapter-tag' style='margin-bottom:0.5rem;'>STATUS</div><div style='font-size:1.5rem; font-weight:700; color:{scolor};'>{eval_data['info']['info']}</div></div>", unsafe_allow_html=True)
 
 def main():
     import subprocess
@@ -214,3 +251,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

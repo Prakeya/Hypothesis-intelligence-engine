@@ -3,25 +3,25 @@ import uuid
 import json
 import os
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Literal
 
 # --- OpenEnv Typed Models ---
 
 class Observation(BaseModel):
+    mode_identifier: Literal["benchmark", "custom"]
     task_id: str
     step_number: int = 1
     max_steps: int = 15
     claim: str
-    dataset: List[Dict[str, Any]]
+    evidence_block: List[Dict[str, Any]]
     independent_var: str
     dependent_var: str
     previous_claims: List[str] = Field(default_factory=list)
 
 class Action(BaseModel):
-    hypothesis: str
-    method: str
-    reasoning_steps: str
-    conclusion: str
+    verdict: Literal["Supported", "Refuted", "Inconclusive"]
+    reasoning: str
+    confidence_score: Optional[float] = 1.0
 
 class Reward(BaseModel):
     reward: float
@@ -36,12 +36,12 @@ class State(BaseModel):
 
 class HypothesisEnv:
     def __init__(self):
-        # 3 Structured Task Levels as per OpenEnv requirement
-        self.tasks = [
+        # Structured Benchmarking Tasks
+        self.benchmark_tasks = [
             {
-                "id": "easy-01",
-                "difficulty": "easy",
-                "claim": "More study hours improve marks.",
+                "id": "bench-01",
+                "mode": "benchmark",
+                "claim": "Increased study hours lead to higher marks.",
                 "dataset": [
                     {"hours": 2, "marks": 60},
                     {"hours": 5, "marks": 75},
@@ -49,87 +49,95 @@ class HypothesisEnv:
                     {"hours": 10, "marks": 95}
                 ],
                 "independent_var": "hours",
-                "dependent_var": "marks"
+                "dependent_var": "marks",
+                "ground_truth_verdict": "Supported"
             },
             {
-                "id": "easy-02",
-                "difficulty": "easy",
-                "claim": "Higher temperatures increase ice cream sales.",
+                "id": "bench-02",
+                "mode": "benchmark",
+                "claim": "Coffee consumption reduces sleep duration.",
                 "dataset": [
-                    {"temp": 20, "sales": 100},
-                    {"temp": 25, "sales": 250},
-                    {"temp": 30, "sales": 400},
-                    {"temp": 35, "sales": 600}
-                ],
-                "independent_var": "temp",
-                "dependent_var": "sales"
-            },
-            {
-                "id": "medium-01",
-                "difficulty": "medium",
-                "claim": "Higher caffeine intake leads to less sleep.",
-                "dataset": [
-                    {"cups": 0, "sleep": 8.5},
-                    {"cups": 1, "sleep": 8},
-                    {"cups": 2, "sleep": 7.5},
-                    {"cups": 4, "sleep": 5.5},
-                    {"cups": 6, "sleep": 4}
+                    {"cups": 0, "sleep": 8},
+                    {"cups": 1, "sleep": 7.5},
+                    {"cups": 4, "sleep": 5},
+                    {"cups": 8, "sleep": 3}
                 ],
                 "independent_var": "cups",
-                "dependent_var": "sleep"
+                "dependent_var": "sleep",
+                "ground_truth_verdict": "Supported"
             },
             {
-                "id": "medium-02",
-                "difficulty": "medium",
-                "claim": "Increased exercise hours lead to weight loss.",
+                "id": "bench-03",
+                "mode": "benchmark",
+                "claim": "Higher temperatures decrease umbrella sales.",
                 "dataset": [
-                    {"hours": 0, "weight": 90},
-                    {"hours": 2, "weight": 88},
-                    {"hours": 5, "weight": 84},
-                    {"hours": 8, "weight": 79},
-                    {"hours": 10, "weight": 75}
+                    {"temp": 15, "sales": 50},
+                    {"temp": 25, "sales": 20},
+                    {"temp": 35, "sales": 5}
                 ],
-                "independent_var": "hours",
-                "dependent_var": "weight"
+                "independent_var": "temp",
+                "dependent_var": "sales",
+                "ground_truth_verdict": "Supported"
             },
             {
-                "id": "hard-01",
-                "difficulty": "hard",
-                "claim": "Increased rainfall always leads to higher crop yield.",
+                "id": "bench-04",
+                "mode": "benchmark",
+                "claim": "Eating more sugar leads to weight loss.",
                 "dataset": [
-                    {"rainfall": 100, "yield": 5},
-                    {"rainfall": 200, "yield": 8},
-                    {"rainfall": 500, "yield": 12},
-                    {"rainfall": 800, "yield": 9},  # The "Trap": Excessive rain reduces yield
-                    {"rainfall": 1000, "yield": 6}
+                    {"sugar_g": 10, "weight": 70},
+                    {"sugar_g": 50, "weight": 75},
+                    {"sugar_g": 100, "weight": 82}
                 ],
-                "independent_var": "rainfall",
-                "dependent_var": "yield"
+                "independent_var": "sugar_g",
+                "dependent_var": "weight",
+                "ground_truth_verdict": "Refuted"
             },
             {
-                "id": "hard-02",
-                "difficulty": "hard",
-                "claim": "Higher website traffic always increases server response time.",
+                "id": "bench-05",
+                "mode": "benchmark",
+                "claim": "Wearing blue shoes improves running speed.",
                 "dataset": [
-                    {"users": 100, "latency": 20},
-                    {"users": 500, "latency": 25},
-                    {"users": 2000, "latency": 45},
-                    {"users": 5000, "latency": 40}, # Optimized caching kicks in
-                    {"users": 10000, "latency": 35}
+                    {"color": "blue", "speed": 10},
+                    {"color": "red", "speed": 11},
+                    {"color": "blue", "speed": 9.5}
                 ],
-                "independent_var": "users",
-                "dependent_var": "latency"
+                "independent_var": "color",
+                "dependent_var": "speed",
+                "ground_truth_verdict": "Inconclusive"
             }
         ]
         self._current_state: Optional[State] = None
 
-    def reset(self) -> Observation:
+    @property
+    def tasks(self):
+        # To maintain compatibility with existing UI that uses .tasks
+        return self.benchmark_tasks
+
+    def reset(self, mode: Literal["benchmark", "custom"] = "benchmark", custom_data: Optional[Dict[str, Any]] = None) -> Observation:
         """Resets the environment and returns the initial observation."""
-        task_data = random.choice(self.tasks)
+        if mode == "benchmark":
+            task_data = random.choice(self.benchmark_tasks)
+        else:
+            if not custom_data:
+                # Default custom if none provided
+                task_data = {
+                    "id": "custom-" + str(uuid.uuid4())[:8],
+                    "claim": "Custom claim",
+                    "dataset": [],
+                    "independent_var": "x",
+                    "dependent_var": "y",
+                    "ground_truth_verdict": "Inconclusive"
+                }
+            else:
+                task_data = custom_data
+                task_data["id"] = "custom-" + str(uuid.uuid4())[:8]
+                task_data["ground_truth_verdict"] = "Inconclusive" # Custom mode is open-ended
+
         obs = Observation(
+            mode_identifier=mode,
             task_id=task_data["id"],
             claim=task_data["claim"],
-            dataset=task_data["dataset"],
+            evidence_block=task_data["dataset"],
             independent_var=task_data["independent_var"],
             dependent_var=task_data["dependent_var"]
         )
@@ -143,14 +151,18 @@ class HypothesisEnv:
             
         from server.grader import evaluate_action
         
-        # Grading logic compliant with OpenEnv (0.0 - 1.0)
-        eval_res = evaluate_action(action.dict(), self._current_state.current_task.dict())
-        
-        # Apply OpenEnv blueprint reward normalization
-        normalized_reward = eval_res["reward"]
+        # Find ground truth for benchmarking if applicable
+        ground_truth = "Inconclusive"
+        if self._current_state.current_task.mode_identifier == "benchmark":
+            task = next((t for t in self.benchmark_tasks if t["id"] == self._current_state.current_task.task_id), None)
+            if task:
+                ground_truth = task["ground_truth_verdict"]
+
+        # Grading logic
+        eval_res = evaluate_action(action.dict(), self._current_state.current_task.dict(), ground_truth)
         
         reward = Reward(
-            reward=normalized_reward,
+            reward=eval_res["reward"],
             info=eval_res,
             done=True
         )
@@ -163,3 +175,4 @@ class HypothesisEnv:
         if not self._current_state:
             raise ValueError("Environment has not been initialized.")
         return self._current_state
+
