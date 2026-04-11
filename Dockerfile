@@ -11,8 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Hugging Face Spaces requires port 7860
-EXPOSE 7860
+# Deployment via Uvicorn for OpenEnv / Hugging Face Spaces
+EXPOSE 8000
 
-# Run Streamlit on HF-required port
-CMD ["python", "-m", "streamlit", "run", "server/app.py", "--server.port=7860", "--server.address=0.0.0.0"]
+CMD ["uvicorn", "inference:app", "--host", "0.0.0.0", "--port", "8000"]

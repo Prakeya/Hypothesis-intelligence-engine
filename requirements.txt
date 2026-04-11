@@ -1,8 +1,6 @@
-openenv-core
 pydantic
 openai
-streamlit
-numpy
-python-dotenv
-uvicorn
 fastapi
+uvicorn
+python-dotenv
+numpy
