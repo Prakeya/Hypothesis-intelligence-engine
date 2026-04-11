@@ -10,8 +10,8 @@ def evaluate_action(action, task, ground_truth=None):
     verdict = action.get("verdict", "")
     reasoning = action.get("reasoning", "")
     
-    evidence = task["evidence_block"]
-    ind_var = task["independent_var"]
+    evidence = task.get("evidence_block", task.get("dataset", []))
+    ind_var = task.get("independent_var", "")
     dep_var = task["dependent_var"]
     
     # 1. Hallucination Check (Strict)

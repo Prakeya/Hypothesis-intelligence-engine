@@ -111,3 +111,72 @@ def predict(req: PredictRequest):
         "score": 0.8,
         "result": action_data
     }
+
+# --- Logging Helpers (Strict OpenEnv Format Phase 2) ---
+def log_start(task: str, env: str, model: str):
+    print(f"[START] task={task} env={env} model={model}", flush=True)
+
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str] = None):
+    print(f"[STEP] step={step} action={action} reward={reward} done={done} error={error}", flush=True)
+
+def log_end(success: bool, steps: int, score: float, rewards: List[float]):
+    print(f"[END] success={success} steps={steps} score={score} rewards={rewards}", flush=True)
+
+# --- Automated CLI Evaluator (For Phase 2 Grader) ---
+async def main():
+    import json
+    
+    api_key = os.getenv("OPENAI_API_KEY", "no-key")
+    if not api_key: api_key = "no-key"
+    client = OpenAI(base_url=API_BASE_URL, api_key=api_key)
+    
+    obs = env_instance.reset()
+    log_start(task=obs.task_id, env="hypothesis-intelligence-v4", model=MODEL_NAME)
+    
+    rewards = []
+    steps_taken = 0
+    success = False
+    final_score = 0.0
+    
+    try:
+        for step in range(1, 2):
+            raw_action = get_model_message(client, step, obs.claim, obs.dataset, 0.0)
+            
+            try:
+                action_data = json.loads(raw_action)
+            except Exception:
+                action_data = {
+                    "hypothesis": "Fallback",
+                    "method": "Error handling",
+                    "reasoning_steps": "Model call failed",
+                    "conclusion": "Handled safely"
+                }
+            
+            # Map fallback generic outputs to valid internal Action
+            action = Action(
+                hypothesis=action_data.get("hypothesis", "Fallback"),
+                method=action_data.get("method", "Method"),
+                reasoning_steps=action_data.get("reasoning_steps", "Steps"),
+                conclusion=action_data.get("conclusion", "Conclusion")
+            )
+            
+            reward_obj = env_instance.step(action)
+            reward = reward_obj.reward
+            done = reward_obj.done
+            
+            rewards.append(reward)
+            steps_taken = step
+            
+            log_step(step=step, action=raw_action[:100].replace('\n', ' '), reward=reward, done=done)
+            if done: break
+            
+        final_score = sum(rewards)
+        final_score = min(max(final_score, 0.0), 1.0)
+        success = final_score >= 0.7
+        
+    finally:
+        log_end(success=success, steps=steps_taken, score=final_score, rewards=rewards)
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
