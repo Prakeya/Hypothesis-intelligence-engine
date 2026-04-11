@@ -1,12 +1,3 @@
----
-title: Hypothesis Intelligence Engine
-emoji: 🔬
-colorFrom: gray
-colorTo: blue
-sdk: docker
-pinned: false
----
-
 # Hypothesis Intelligence Engine (OpenEnv)
 > **AI-Driven Logic Auditing & Hallucination Detection Environment**
 
@@ -34,13 +25,6 @@ The internal evaluation outputs cleanly mapping to logic triggers:
 - `verdict`: "Supported", "Refuted", or "Inconclusive".
 - `reasoning`: The step-by-step logic chain mapped specifically against variables.
 - `confidence_score`: Evaluated metric mapping.
-
-## Tasks Environments
-
-We strictly feature 3 primary built-in logic scenarios simulating real empirical artifacts:
-*   **Easy Tier (`easy-01`) - Linear Correlation**: Testing logical alignment over generic linear models (e.g. "More study hours improve marks").
-*   **Medium Tier (`medium-01`) - Inverse Trend Analysis**: Evaluates accurate capture over downward logic chains (e.g. "Higher caffeine intake leads to less sleep").
-*   **Hard Tier (`hard-01`) - Non-monotonic Trap**: Specifically traps monotonic assumption models where thresholds break generic rules (e.g. "Excessive rain breaks yield curves").
 
 ## Setup & Deployment
 
