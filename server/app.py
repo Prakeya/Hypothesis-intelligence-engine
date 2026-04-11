@@ -151,23 +151,24 @@ header, footer, [data-testid="stHeader"] {visibility: hidden;}
 }
 
 /* Annihilate Streamlit's Native React Unmount Lag & Fade Ghosting */
-div[data-testid="stAppViewContainer"] *, 
-.stApp, .element-container, .stMarkdown, .stButton, .stVerticalBlock, .stHorizontalBlock {
+* {
     animation-duration: 0.001s !important; 
     transition-duration: 0.001s !important;
-    animation: none !important;
-    transition: none !important;
 }
-/* Whitelist our custom premium UI hover states */
+[data-testid="stAppViewContainer"] * {
+    transition-delay: 0s !important;
+    animation-delay: 0s !important;
+}
+/* Whitelist our custom premium UI hover states WITHOUT triggering opacity fades */
 .protocol-card {
-    transition: all 0.2s ease-out !important;
+    transition: transform 0.1s ease-out, border-color 0.1s ease-out !important;
 }
 .protocol-card:hover {
     transform: translateY(-5px) !important;
     border-color: rgba(255, 255, 255, 0.3) !important;
 }
 .glass-panel {
-    transition: all 0.2s ease-out !important;
+    transition: transform 0.1s ease-out, border-color 0.1s ease-out !important;
 }
 .glass-panel:hover {
     transform: translateY(-2px) !important;
@@ -279,20 +280,27 @@ def show_analysis_dialog():
     with col1:
          st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>FINAL REWARD</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{eval_data['reward']}</div></div>", unsafe_allow_html=True)
     with col2:
-         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE SCORE</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{out['confidence_score']}</div></div>", unsafe_allow_html=True)
+         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE SCORE</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{out['confidence']:.2f}</div></div>", unsafe_allow_html=True)
     with col3:
          st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>STATUS</div><div style='font-size:1.5rem; font-family:Outfit,sans-serif; font-weight:600; color:#EAEAEA; display:flex; align-items:center; justify-content:center; height:3rem;'>{info_data.get('info', 'Ok')}</div></div>", unsafe_allow_html=True)
 
+# --- VIEW CONTAINERS TO PREVENT GHOSTING ---
+home_placeholder = st.empty()
+
 if not st.session_state.entered:
-    st.markdown("<div style='height: 25vh;'></div>", unsafe_allow_html=True)
-    st.markdown("<div class='hero-subtitle'>OpenEnv Logic Auditing Engine</div>", unsafe_allow_html=True)
-    st.markdown("<div class='hero-title'>Hypothesis Intelligence</div>", unsafe_allow_html=True)
-    st.markdown("<div style='height: 12rem;'></div>", unsafe_allow_html=True)
-    _, col_btn, _ = st.columns([1, 0.6, 1])
-    with col_btn:
-        st.button("Initialize Kernel", type="primary", use_container_width=True, on_click=init_kernel_cb)
+    with home_placeholder.container():
+        st.markdown("<div style='height: 25vh;'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='hero-subtitle'>OpenEnv Logic Auditing Engine</div>", unsafe_allow_html=True)
+        st.markdown("<div class='hero-title'>Hypothesis Intelligence</div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 12rem;'></div>", unsafe_allow_html=True)
+        _, col_btn, _ = st.columns([1, 0.6, 1])
+        with col_btn:
+            st.button("Initialize Kernel", type="primary", use_container_width=True, on_click=init_kernel_cb)
 
 else:
+    # INSTANT DESTRUCTION of home elements
+    home_placeholder.empty()
+    
     if st.session_state.mode:
         st.button("← Change Protocol", on_click=go_back_cb)
     else:

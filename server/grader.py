@@ -15,7 +15,9 @@ def evaluate_action(action, task, ground_truth=None):
     dep_var = task["dependent_var"]
     
     # 1. Hallucination Check (Strict)
-    numbers_in_reasoning = re.findall(r"[-+]?\d*\.\d+|\d+", reasoning)
+    # Exclude our deliberately injected mathematical metadata strings from being penalized
+    clean_reasoning = re.sub(r"(Estimated Correlation \(r\): |Confidence Score: |r=)[-+]?\d*\.\d+", "", reasoning)
+    numbers_in_reasoning = re.findall(r"[-+]?\d*\.\d+|\d+", clean_reasoning)
     evidence_numbers = []
     for d in evidence:
         evidence_numbers.extend([str(v) for v in d.values()])

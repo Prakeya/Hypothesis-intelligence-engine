@@ -21,7 +21,8 @@ class Observation(BaseModel):
 class Action(BaseModel):
     verdict: Literal["Supported", "Refuted", "Inconclusive"]
     reasoning: str
-    confidence_score: Optional[float] = 1.0
+    confidence: float
+    hallucination_check: Dict[str, str]
 
 class Reward(BaseModel):
     reward: float
