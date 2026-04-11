@@ -59,9 +59,29 @@ def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last
             "conclusion": "Handled safely"
         })
 
+from env import HypothesisEnv, Action
+
+env_instance = HypothesisEnv()
+
 @app.get("/")
 def read_root():
     return {"status": "running"}
+
+@app.post("/reset")
+def reset_env():
+    try:
+        obs = env_instance.reset()
+        return obs.dict()
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/step")
+def step_env(action: Action):
+    try:
+        reward = env_instance.step(action)
+        return reward.dict()
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.post("/predict")
 def predict(req: PredictRequest):
