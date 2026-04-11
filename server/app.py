@@ -98,6 +98,11 @@ header, footer, [data-testid="stHeader"] {visibility: hidden;}
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     position: relative;
     overflow: hidden;
+    min-height: 310px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
 }
 .protocol-card::before {
     content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
@@ -144,18 +149,140 @@ header, footer, [data-testid="stHeader"] {visibility: hidden;}
 .logic-node-body {
     font-family: 'Inter', sans-serif; color: #BBB; font-size: 1rem; line-height: 1.7; font-weight: 300;
 }
+
+/* Annihilate Streamlit's Native React Unmount Lag & Fade Ghosting */
+div[data-testid="stAppViewContainer"] *, 
+.stApp, .element-container, .stMarkdown, .stButton, .stVerticalBlock, .stHorizontalBlock {
+    animation-duration: 0.001s !important; 
+    transition-duration: 0.001s !important;
+    animation: none !important;
+    transition: none !important;
+}
+/* Whitelist our custom premium UI hover states */
+.protocol-card {
+    transition: all 0.2s ease-out !important;
+}
+.protocol-card:hover {
+    transform: translateY(-5px) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+.glass-panel {
+    transition: all 0.2s ease-out !important;
+}
+.glass-panel:hover {
+    transform: translateY(-2px) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # --- UTILS ---
 def reset_system():
     st.session_state.entered = False
+    st.session_state.mode = None
     st.session_state.agent_output = None
     st.session_state.evaluation = None
-    st.session_state.current_obs = st.session_state.env.reset(mode=st.session_state.mode)
-    st.rerun()
+    st.session_state.current_obs = st.session_state.env.reset(mode="benchmark")
+
+def init_kernel_cb():
+    st.session_state.entered = "active"
+    st.session_state.mode = None
+
+def select_bench_cb():
+    st.session_state.mode = "benchmark"
+    st.session_state.agent_output = None
+
+def select_cust_cb():
+    st.session_state.mode = "custom"
+    st.session_state.current_obs = st.session_state.env.reset(mode="custom")
+    st.session_state.agent_output = None
+
+def go_back_cb():
+    st.session_state.mode = None
+    st.session_state.agent_output = None
 
 # --- ROUTER ---
+@st.dialog("Execution Analysis Output", width="large")
+def show_analysis_dialog():
+    out = st.session_state.agent_output
+    eval_data = st.session_state.evaluation
+    obs = st.session_state.current_obs
+
+    st.markdown("<div class='chapter-tag'>Active Claim Under Test</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size: 1.5rem; font-style: italic; color: #fff; margin-bottom: 2rem;'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
+
+    st.markdown("<div id='logic-anchor' class='chapter-tag'>Robust Explanation & Verdict</div>", unsafe_allow_html=True)
+    
+    color = "#FFFFFF"
+    st.markdown(f"<div class='glass-panel'><div style='font-size: 0.8rem; font-weight: 800; color: #888; text-transform: uppercase;'>FINAL VERDICT</div><div style='font-size: 3rem; font-family: Lora, serif; color: {color}; margin-top: 0.5rem;'>{out['verdict']}</div></div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Formal Logic Trace</div>", unsafe_allow_html=True)
+    
+    import re
+    reasoning_text = out['reasoning']
+    steps = reasoning_text.split('Step ')
+    for step in steps:
+        if not step.strip(): continue
+        parts = step.split('\n', 1)
+        # Ensure safe splitting of titles
+        title_parts = parts[0].split(':', 1)
+        step_num = f"STEP {title_parts[0].strip()}"
+        title_text = title_parts[1].strip() if len(title_parts) > 1 else title_parts[0].strip()
+        
+        step_body = parts[1].replace('\n', '<br>') if len(parts) > 1 else ""
+        step_body = re.sub(r'\*\*(.*?)\*\*', r'<strong style="color: #FFF; font-weight: 600;">\1</strong>', step_body)
+        
+        html_block = f"""
+        <div class='logic-node'>
+            <div class='logic-node-header'>
+                <span class='logic-node-step'>{step_num}</span>
+                <span class='logic-node-title'>{title_text}</span>
+            </div>
+            <div class='logic-node-body'>{step_body}</div>
+        </div>
+        """
+        st.markdown(html_block, unsafe_allow_html=True)
+
+    st.markdown("<div class='chapter-tag' style='margin-top: 3rem;'>Final AI Synthesis</div>", unsafe_allow_html=True)
+    
+    if out['verdict'] == "Supported":
+        c_text = f"The evidence clearly demonstrates a consistent and dominant trend. The claim is decisively <strong>Supported</strong> by the data."
+    elif out['verdict'] == "Refuted":
+        c_text = f"The empirical data behaves entirely counter to the hypothesis. The claim is decisively <strong>Refuted</strong>."
+    else:
+        c_text = f"The outcomes vary rapidly depending on other factors rather than following a guaranteed rule. This claim is <strong>Inconclusive</strong>."
+
+    st.markdown(f"<div class='glass-panel' style='border-left: 5px solid #EAEAEA; background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(28,28,30,1) 100%);'><p style='font-size: 1.3rem; font-weight: 400; line-height: 1.6; color:#F5F5F5; margin: 0; font-family: Outfit, sans-serif;'>{c_text}</p></div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='chapter-tag' style='margin-top: 4rem; text-align: center;'>Reward Allocation</div>", unsafe_allow_html=True)
+    
+    info_data = eval_data.get('info', {})
+    breakdown_html = ""
+    if 'breakdown' in info_data:
+        breakdown_html += "<div style='display: flex; flex-direction: column; max-width: 600px; margin: 0 auto 2rem auto; background: rgba(255,255,255,0.02); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05);'>"
+        for b in info_data['breakdown']:
+            status_color = "#4ade80" if "PASS" in b['status'] else ("#f87171" if "FAIL" in b['status'] else "#777")
+            bg_color = "rgba(74, 222, 128, 0.1)" if "PASS" in b['status'] else ("rgba(248, 113, 113, 0.1)" if "FAIL" in b['status'] else "rgba(255,255,255,0.05)")
+            breakdown_html += f"<div style='margin-bottom:0.8rem; padding-bottom:0.8rem; border-bottom:1px solid rgba(255,255,255,0.02);'>"
+            breakdown_html += f"<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.4rem;'>"
+            breakdown_html += f"<span style='color:#EAEAEA; font-size:1rem; font-weight:600; font-family: Inter, sans-serif;'>{b['metric']}</span>"
+            breakdown_html += f"<span style='color:{status_color}; background: {bg_color}; padding: 4px 12px; border-radius: 20px; font-family:Outfit,sans-serif; font-weight:700; font-size:0.9rem;'>{b['points']} <span style='opacity:0.7; font-size:0.75rem;'>{b['status']}</span></span>"
+            breakdown_html += "</div>"
+            if 'reason' in b:
+                breakdown_html += f"<div style='color:#888; font-size:0.8rem; font-family: Inter, sans-serif; line-height: 1.4;'>{b['reason']}</div>"
+            breakdown_html += "</div>"
+        breakdown_html += "</div>"
+
+    st.markdown(breakdown_html, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>FINAL REWARD</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{eval_data['reward']}</div></div>", unsafe_allow_html=True)
+    with col2:
+         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE SCORE</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{out['confidence_score']}</div></div>", unsafe_allow_html=True)
+    with col3:
+         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>STATUS</div><div style='font-size:1.5rem; font-family:Outfit,sans-serif; font-weight:600; color:#EAEAEA; display:flex; align-items:center; justify-content:center; height:3rem;'>{info_data.get('info', 'Ok')}</div></div>", unsafe_allow_html=True)
+
 if not st.session_state.entered:
     st.markdown("<div style='height: 25vh;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='hero-subtitle'>OpenEnv Logic Auditing Engine</div>", unsafe_allow_html=True)
@@ -163,38 +290,36 @@ if not st.session_state.entered:
     st.markdown("<div style='height: 12rem;'></div>", unsafe_allow_html=True)
     _, col_btn, _ = st.columns([1, 0.6, 1])
     with col_btn:
-        if st.button("Initialize Kernel", type="primary", use_container_width=True):
-            st.session_state.entered = "active"
-            # Ensure no mode is pre-selected
-            st.session_state.mode = None
-            st.rerun()
+        st.button("Initialize Kernel", type="primary", use_container_width=True, on_click=init_kernel_cb)
 
 else:
-    if st.button("← SYSTEM REBOOT"): reset_system()
+    if st.session_state.mode:
+        st.button("← Change Protocol", on_click=go_back_cb)
+    else:
+        st.button("← Power Off", on_click=reset_system)
 
-    st.markdown("<div class='chapter-title' style='text-align:center; margin-top:2rem;'>Protocol Selection</div>", unsafe_allow_html=True)
-    
     # 1. Protocol Selection
-    col_bench, col_cust = st.columns(2)
-    with col_bench:
-        st.markdown("<div class='protocol-card'><h3>Benchmark Protocol</h3><p>Engage pre-calibrated evaluation tasks spanning diverse domains. Validate the engine's inferential accuracy against established mathematical ground truths.</p></div>", unsafe_allow_html=True)
-        if st.button("Activate Benchmarks", use_container_width=True, type="primary" if st.session_state.mode == "benchmark" else "secondary"):
-            st.session_state.mode = "benchmark"
-            st.session_state.agent_output = None
-            st.rerun()
+    if not st.session_state.mode:
+        st.markdown("<div class='chapter-title' style='text-align:center; margin-top:2rem;'>Protocol Selection</div>", unsafe_allow_html=True)
+        st.markdown("<div class='chapter-subtitle' style='text-align:center; color:#AAA; margin-bottom: 2rem;'>Select an operating configuration below to calibrate the engine limits.</div>", unsafe_allow_html=True)
+        
+        col_bench, col_cust = st.columns(2)
+        with col_bench:
+            bg = "linear-gradient(145deg, #18181A 0%, #121214 100%)"
+            accent = "<div style='width: 30px; height: 3px; background: #FFFFFF; margin: 0 auto 1.5rem auto;'></div>"
             
-    with col_cust:
-        st.markdown("<div class='protocol-card'><h3>Custom Injector</h3><p>Inject custom hypotheses and raw telemetry matrices directly into the inference core. Probe structural limits and perform open-ended logical exploration.</p></div>", unsafe_allow_html=True)
-        if st.button("Activate Custom Node", use_container_width=True, type="primary" if st.session_state.mode == "custom" else "secondary"):
-            st.session_state.mode = "custom"
-            st.session_state.current_obs = st.session_state.env.reset(mode="custom")
-            st.session_state.agent_output = None
-            st.rerun()
-
-    st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 3rem 0; '>", unsafe_allow_html=True)
+            st.markdown(f"<div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'><div style='font-size:0.6rem; letter-spacing:2px; color:#666; font-weight:800; margin-bottom:1rem;'>MODE [01]</div>{accent}<h3 style='font-size:1.8rem; font-weight:600;'>Benchmark Runtime</h3><p style='font-size:0.85rem; color:#888; font-weight:300;'>Engage pre-calibrated evaluation tasks. Validate inferential accuracy against closed-system structural mathematics.</p></div>", unsafe_allow_html=True)
+            st.button("Initialize Benchmark Stack", use_container_width=True, type="secondary", on_click=select_bench_cb)
+                
+        with col_cust:
+            bg = "linear-gradient(145deg, #18181A 0%, #121214 100%)"
+            accent = "<div style='width: 30px; height: 3px; background: #888888; margin: 0 auto 1.5rem auto;'></div>"
+            
+            st.markdown(f"<div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'><div style='font-size:0.6rem; letter-spacing:2px; color:#666; font-weight:800; margin-bottom:1rem;'>MODE [02]</div>{accent}<h3 style='font-size:1.8rem; font-weight:400;'>Custom Injector</h3><p style='font-size:0.85rem; color:#888; font-weight:300;'>Inject custom matrices directly into the inference core. Probe limits and perform open-ended logical bounding.</p></div>", unsafe_allow_html=True)
+            st.button("Initialize Custom Injector", use_container_width=True, type="secondary", on_click=select_cust_cb)
 
     # 2. Engine Selection & Preview
-    if st.session_state.mode == "benchmark":
+    elif st.session_state.mode == "benchmark":
         st.markdown("<div class='chapter-title' style='text-align:center;'>Target Strategy Engine</div>", unsafe_allow_html=True)
         
         all_tasks = st.session_state.env.benchmark_tasks
@@ -213,7 +338,6 @@ else:
                     st.session_state.env._current_state = State(current_task=st.session_state.current_obs)
                     
                     with st.spinner("Executing Logic Audit..."):
-                        time.sleep(0.5)
                         from server.agent import HypothesisAgent
                         agent = HypothesisAgent(use_llm=False)
                         action_dict = agent.generate_action(st.session_state.current_obs.dict(), st.session_state.audit_id)
@@ -222,13 +346,14 @@ else:
                         
                         st.session_state.agent_output = action_dict
                         st.session_state.evaluation = reward.dict()
-                    st.rerun()
+                    show_analysis_dialog()
 
     elif st.session_state.mode == "custom":
         st.markdown("<div class='chapter-title' style='text-align:center;'>Custom Injector</div>", unsafe_allow_html=True)
         obs = st.session_state.current_obs
         with st.container():
             st.markdown("<div class='glass-panel'>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:0.9rem; color:#888; margin-bottom:1rem; padding:1rem; border-left:3px solid #AAA; background:rgba(255,255,255,0.02);'><strong>Instructions:</strong> Provide the evidence backing the hypothesis as a valid JSON array of objects. Each object represents an observation, containing keys corresponding to the X-Axis and Y-Axis variables. Only numerical associations undergo strict monotonicity math processing. Example: <code>[{\"hours\": 10, \"marks\": 50}, {\"hours\": 15, \"marks\": 70}]</code></div>", unsafe_allow_html=True)
             custom_claim = st.text_area("Hypothesis Claim", value=obs.claim, height=80)
             custom_dataset_json = st.text_area("Evidence Matrix (JSON Format)", value=json.dumps(obs.evidence_block, indent=2), height=250)
             col_v1, col_v2 = st.columns(2)
@@ -246,7 +371,6 @@ else:
                 st.session_state.env._current_state = State(current_task=st.session_state.current_obs)
                 
                 with st.spinner("Executing Logic Audit..."):
-                    time.sleep(0.5)
                     from server.agent import HypothesisAgent
                     agent = HypothesisAgent(use_llm=False)
                     action_dict = agent.generate_action(st.session_state.current_obs.dict(), st.session_state.audit_id)
@@ -254,84 +378,13 @@ else:
                     reward = st.session_state.env.step(action)
                     st.session_state.agent_output = action_dict
                     st.session_state.evaluation = reward.dict()
-                st.rerun()
+                show_analysis_dialog()
 
-    # 3. Final Conclusion Display
+    # 3. Final Conclusion Display Button
     if st.session_state.agent_output:
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 3rem 0; '>", unsafe_allow_html=True)
-        out = st.session_state.agent_output
-        eval_data = st.session_state.evaluation
-        obs = st.session_state.current_obs
-
-        st.markdown("<div class='chapter-tag'>Active Claim Under Test</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size: 1.5rem; font-style: italic; color: #fff; margin-bottom: 2rem;'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
-
-        st.markdown("<div id='logic-anchor' class='chapter-tag'>Robust Explanation & Verdict</div>", unsafe_allow_html=True)
-        
-        color = "#FFFFFF"
-        st.markdown(f"<div class='glass-panel'><div style='font-size: 0.8rem; font-weight: 800; color: #888; text-transform: uppercase;'>FINAL VERDICT</div><div style='font-size: 3rem; font-family: Lora, serif; color: {color}; margin-top: 0.5rem;'>{out['verdict']}</div></div>", unsafe_allow_html=True)
-
-        st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Formal Logic Trace</div>", unsafe_allow_html=True)
-        
-        import re
-        reasoning_text = out['reasoning']
-        steps = reasoning_text.split('Step ')
-        for step in steps:
-            if not step.strip(): continue
-            parts = step.split('\n', 1)
-            # Ensure safe splitting of titles
-            title_parts = parts[0].split(':', 1)
-            step_num = f"STEP {title_parts[0].strip()}"
-            title_text = title_parts[1].strip() if len(title_parts) > 1 else title_parts[0].strip()
-            
-            step_body = parts[1].replace('\n', '<br>') if len(parts) > 1 else ""
-            step_body = re.sub(r'\*\*(.*?)\*\*', r'<strong style="color: #FFF; font-weight: 600;">\1</strong>', step_body)
-            
-            html_block = f"""
-            <div class='logic-node'>
-                <div class='logic-node-header'>
-                    <span class='logic-node-step'>{step_num}</span>
-                    <span class='logic-node-title'>{title_text}</span>
-                </div>
-                <div class='logic-node-body'>{step_body}</div>
-            </div>
-            """
-            st.markdown(html_block, unsafe_allow_html=True)
-
-        st.markdown("<div class='chapter-tag' style='margin-top: 3rem;'>Axiomatic Conclusion</div>", unsafe_allow_html=True)
-        conclusion_text = f"Based on the rigorous mathematical trace synthesized above, the deterministic claim is structurally <strong>{out['verdict']}</strong> by the empirical matrix."
-        st.markdown(f"<div class='glass-panel' style='border-left: 5px solid #EAEAEA; background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(28,28,30,1) 100%);'><p style='font-size: 1.3rem; font-weight: 400; line-height: 1.6; color:#F5F5F5; margin: 0; font-family: Outfit, sans-serif;'>{conclusion_text}</p></div>", unsafe_allow_html=True)
-
-        st.markdown("<div class='chapter-tag' style='margin-top: 4rem; text-align: center;'>Reward Allocation</div>", unsafe_allow_html=True)
-        
-        info_data = eval_data.get('info', {})
-        breakdown_html = ""
-        if 'breakdown' in info_data:
-            breakdown_html += "<div style='display: flex; flex-direction: column; max-width: 600px; margin: 0 auto 2rem auto; background: rgba(255,255,255,0.02); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05);'>"
-            for b in info_data['breakdown']:
-                color = "#4ade80" if "PASS" in b['status'] else ("#f87171" if "FAIL" in b['status'] else "#777")
-                bg_color = "rgba(74, 222, 128, 0.1)" if "PASS" in b['status'] else ("rgba(248, 113, 113, 0.1)" if "FAIL" in b['status'] else "rgba(255,255,255,0.05)")
-                breakdown_html += f"<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; padding-bottom:0.8rem; border-bottom:1px solid rgba(255,255,255,0.02);'>"
-                breakdown_html += f"<span style='color:#AAA; font-size:0.95rem; font-weight:500; font-family: Inter, sans-serif;'>{b['metric']}</span>"
-                breakdown_html += f"<span style='color:{color}; background: {bg_color}; padding: 4px 12px; border-radius: 20px; font-family:Outfit,sans-serif; font-weight:700; font-size:0.9rem;'>{b['points']} <span style='opacity:0.7; font-size:0.75rem;'>{b['status']}</span></span>"
-                breakdown_html += "</div>"
-            breakdown_html += "</div>"
-
-        st.markdown(breakdown_html, unsafe_allow_html=True)
-
-        col1, col2, col3 = st.columns(3)
-        with col1:
-             st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>FINAL REWARD</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{eval_data['reward']}</div></div>", unsafe_allow_html=True)
-        with col2:
-             st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE SCORE</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{out['confidence_score']}</div></div>", unsafe_allow_html=True)
-        with col3:
-             st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>STATUS</div><div style='font-size:1.5rem; font-family:Outfit,sans-serif; font-weight:600; color:#EAEAEA; display:flex; align-items:center; justify-content:center; height:3rem;'>{info_data.get('info', 'Ok')}</div></div>", unsafe_allow_html=True)
-
-        import streamlit.components.v1 as components
-        components.html(
-            "<script>window.parent.document.querySelector('.main').scrollTo({top: window.parent.document.querySelector('.main').scrollHeight, behavior: 'smooth'});</script>",
-            height=0, width=0
-        )
+        if st.button("View Previous Analysis Results", use_container_width=True, type="secondary"):
+            show_analysis_dialog()
 
 def main():
     import subprocess

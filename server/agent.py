@@ -16,41 +16,47 @@ class HypothesisAgent:
         dep_var = state["dependent_var"]
         
         # 1. Scope & Semantic Parsing
-        reasoning = "Step 1: Epistemic Scope Formulation\n"
-        reasoning += f"To evaluate the structural integrity of the active claim (**'{claim}'**), we first delimit the analytical boundaries. "
-        reasoning += f"The system identifies **`{ind_var}`** as the primary independent stimulus (**X**) and **`{dep_var}`** as the dependent response vector (**Y**).\n"
+        reasoning = "Step 1: Metric Identification\n"
+        reasoning += f"To evaluate the claim (**'{claim}'**), the system first identifies the metrics being compared. "
+        reasoning += f"We set **`{ind_var}`** as the core independent variable (the cause) and **`{dep_var}`** as the dependent variable (the effect).\n"
         
         # 2. Evidence Corpus Audit
-        reasoning += "Step 2: Empirical Corpus Structuring\n"
+        reasoning += "Step 2: Evidence Dataset Validation\n"
         x_values = [d.get(ind_var) for d in evidence if ind_var in d]
         y_values = [d.get(dep_var) for d in evidence if dep_var in d]
-        reasoning += f"The evidence block is successfully parsed, yielding an **n={len(evidence)}** sample size of valid observational paired coordinates. "
+        reasoning += f"We successfully extracted the provided dataset, confirming **{len(evidence)}** valid observational records. "
         
         if not x_values or not y_values:
             return {
                 "verdict": "Inconclusive",
-                "reasoning": reasoning + "**Crucially, the dataset is observed to be an empty set or lacks corresponding features.**\nStep 3: Dimensional Collapse\nWithout continuous numerical variance, **mathematical induction is impossible**.\nStep 4: Final Synthesis\nThus, the claim maintains a quantum state of **untestability** based on the provided null parameters.",
+                "reasoning": reasoning + "**Crucially, the dataset is completely empty or missing these required variables.**\nStep 3: Trend Analysis\nWithout data, we cannot establish a pattern.\nStep 4: Final Conclusion\nThe claim cannot be tested without valid inputs, so it is **Inconclusive**.",
                 "confidence_score": 0.1
             }
-        reasoning += "This sample population will act as the bounded universe for verifying our hypothesis.\n"
+        reasoning += "We will use this dataset to verify the hypothesis.\n"
 
         # 3. Trend Mathematics
-        reasoning += "Step 3: Axiomatic Correlation Mapping\n"
-        paired = sorted(zip(x_values, y_values))
-        sorted_x, sorted_y = zip(*paired)
+        reasoning += "Step 3: Trend Analysis\n"
         
-        is_increasing = all(sorted_y[i] <= sorted_y[i+1] for i in range(len(sorted_y)-1))
-        is_decreasing = all(sorted_y[i] >= sorted_y[i+1] for i in range(len(sorted_y)-1))
+        if any(isinstance(x, str) for x in x_values) or any(isinstance(y, str) for y in y_values):
+            is_increasing = False
+            is_decreasing = False
+            reasoning += f"We observed that the variables (like `{ind_var}` or `{dep_var}`) contain descriptive categories rather than strict numbers. Evaluating absolute direct relationships is unsafe.\n"
+        else:
+            paired = sorted(zip(x_values, y_values))
+            sorted_x, sorted_y = zip(*paired)
+            
+            is_increasing = all(sorted_y[i] <= sorted_y[i+1] for i in range(len(sorted_y)-1))
+            is_decreasing = all(sorted_y[i] >= sorted_y[i+1] for i in range(len(sorted_y)-1))
         
         if is_increasing:
-            reasoning += f"A discrete mathematical sort operation reveals a **strict covariant progression**: as `{ind_var}` scales upwards, the response profile of `{dep_var}` **monotonically expands** in tandem.\n"
+            reasoning += f"Sorting the data reveals a clear **increasing trend**: as `{ind_var}` goes up, `{dep_var}` strictly goes up as well.\n"
         elif is_decreasing:
-            reasoning += f"A discrete mathematical sort operation uncovers a **strict contravariant relationship**: forcing `{ind_var}` higher **mechanically depresses** the baseline metrics of `{dep_var}`.\n"
+            reasoning += f"Sorting the data reveals a clear **decreasing trend**: as `{ind_var}` goes up, `{dep_var}` strictly drops.\n"
         else:
-            reasoning += f"Evaluating the localized variance reveals **scattered or non-linear distributions**. The metrics fluctuate independent of a strict monotonic mathematical rule.\n"
+            reasoning += f"The data points fluctuate. There is no strict upward or downward trend linking `{ind_var}` directly to `{dep_var}`.\n"
 
         # 4. Dialectical Evaluation
-        reasoning += "Step 4: Dialectical Semantic Mapping\n"
+        reasoning += "Step 4: Hypothesis Direction\n"
         claim_lower = claim.lower()
         
         pos_terms = ["increase", "improve", "higher", "more", "positive", "growth", "lead to"]
@@ -68,28 +74,32 @@ class HypothesisAgent:
         
         if not all_terms:
             claim_direction = 1 
-            reasoning += "The system infers a baseline expectation of a **positive structural drift** based on standard neutral linguistic formulations.\n"
+            reasoning += "The wording in the claim implies a standard expectation: that an increase in the cause will lead to an increase in the effect.\n"
         else:
             claim_direction = all_terms[-1][1]
-            t_str = "POSITIVE" if claim_direction == 1 else "NEGATIVE"
-            reasoning += f"Linguistic tokenization definitively parses the core sentiment of the hypothesis: expecting a structurally **{t_str}** trajectory.\n"
+            t_str = "increasing" if claim_direction == 1 else "decreasing"
+            reasoning += f"Based on the text phrasing, the hypothesis is explicitly predicting a **{t_str}** relationship between the variables.\n"
 
         # 5. Final Synthesis
-        reasoning += "Step 5: Epistemological Synthesis\n"
+        reasoning += "Step 5: Final Conclusion\n"
         if (claim_direction == 1 and is_increasing) or (claim_direction == -1 and is_decreasing):
             verdict = "Supported"
-            reasoning += "**The predicted epistemological outcome aligns flawlessly with the raw mathematical reality.** The null hypothesis is strongly rejected, yielding a verified architectural congruence."
+            reasoning += "The predicted relationship perfectly matches the actual trend seen in the dataset. Therefore, the hypothesis is **Supported** by the evidence."
         elif (claim_direction == 1 and is_decreasing) or (claim_direction == -1 and is_increasing):
             verdict = "Refuted"
-            reasoning += "**A foundational contradiction arises.** The semantics of the claim explicitly declare an outcome actively obliterated by the empirical constraints discovered in the environment."
+            reasoning += "The hypothesis predicts an outcome that is the exact opposite of what the dataset proves. Therefore, the hypothesis is decisively **Refuted**."
         else:
             if len(evidence) < 3:
                 verdict = "Inconclusive"
-                reasoning += "**The analytical envelope collapses.** A sample size constraints (n<3) ensures severe overfitting algorithms, rendering determinism completely unsafe."
+                reasoning += "There are too few observations (less than 3) to confidently confirm any real pattern. The result is **Inconclusive**."
             else:
                 verdict = "Inconclusive"
-                reasoning += "**The correlation density metric actively decays into noise.** The structural variance observed in the matrix represents an irreconcilable ambiguity regarding the claim."
-
+                confounding = [k for k in evidence[0].keys() if k not in [ind_var, dep_var]]
+                if confounding:
+                    c_vars = ", ".join([str(c) for c in confounding])
+                    reasoning += f"The data shows no guaranteed correlation. Rather than following a strict rule, the outcome clearly depends on **{c_vars}** and varies significantly. Therefore, it cannot be said conclusively."
+                else:
+                    reasoning += f"Because the relationship between `{ind_var}` and `{dep_var}` fluctuates wildly instead of following a strict pattern, the claim is **Inconclusive**."
 
         return {
             "verdict": verdict,

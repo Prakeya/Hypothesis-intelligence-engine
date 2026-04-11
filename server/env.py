@@ -43,14 +43,14 @@ class HypothesisEnv:
                 "mode": "benchmark",
                 "claim": "Increased study hours lead to higher marks.",
                 "dataset": [
-                    {"hours": 2, "marks": 60},
-                    {"hours": 5, "marks": 75},
-                    {"hours": 8, "marks": 85},
-                    {"hours": 10, "marks": 95}
+                    {"hours": 2, "marks": 60, "student": "A"},
+                    {"hours": 5, "marks": 85, "student": "B"},
+                    {"hours": 8, "marks": 70, "student": "C"},
+                    {"hours": 12, "marks": 95, "student": "D"}
                 ],
                 "independent_var": "hours",
                 "dependent_var": "marks",
-                "ground_truth_verdict": "Supported",
+                "ground_truth_verdict": "Inconclusive",
                 "domain": "Education"
             },
             {
@@ -144,13 +144,41 @@ class HypothesisEnv:
                 "claim": "Daily meditation improves memory recall.",
                 "dataset": [
                     {"meditation_mins": 10, "recall": 80},
-                    {"meditation_mins": 20, "recall": 82},
-                    {"meditation_mins": 30, "recall": 79}
+                    {"meditation_mins": 20, "recall": 85},
+                    {"meditation_mins": 30, "recall": 92}
                 ],
                 "independent_var": "meditation_mins",
                 "dependent_var": "recall",
-                "ground_truth_verdict": "Inconclusive",
+                "ground_truth_verdict": "Supported",
                 "domain": "Psychology"
+            },
+            {
+                "id": "bench-09",
+                "mode": "benchmark",
+                "claim": "Higher altitude leads to lower air pressure.",
+                "dataset": [
+                    {"altitude_m": 0, "pressure_hpa": 1013},
+                    {"altitude_m": 1000, "pressure_hpa": 898},
+                    {"altitude_m": 2000, "pressure_hpa": 795}
+                ],
+                "independent_var": "altitude_m",
+                "dependent_var": "pressure_hpa",
+                "ground_truth_verdict": "Supported",
+                "domain": "Physics"
+            },
+            {
+                "id": "bench-10",
+                "mode": "benchmark",
+                "claim": "More reading reduces vocabulary.",
+                "dataset": [
+                    {"books_per_month": 0, "vocab": 5000},
+                    {"books_per_month": 2, "vocab": 7500},
+                    {"books_per_month": 5, "vocab": 12000}
+                ],
+                "independent_var": "books_per_month",
+                "dependent_var": "vocab",
+                "ground_truth_verdict": "Refuted",
+                "domain": "Linguistics"
             }
         ]
         self._current_state: Optional[State] = None

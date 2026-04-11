@@ -53,26 +53,26 @@ def evaluate_action(action, task, ground_truth=None):
     
     if hallucination_detected:
         reward = 0.0
-        breakdown.append({"metric": "Hallucination Check", "status": "FAIL", "points": "-1.0"})
-        breakdown.append({"metric": "Verdict Accuracy", "status": "VOID", "points": "0.0"})
-        breakdown.append({"metric": "Logic Baseline", "status": "VOID", "points": "0.0"})
+        breakdown.append({"metric": "Hallucination Check", "status": "FAIL", "points": "-1.0", "reason": "Fabricated numbers not found in evidence."})
+        breakdown.append({"metric": "Verdict Accuracy", "status": "VOID", "points": "0.0", "reason": "Skipped due to hallucination."})
+        breakdown.append({"metric": "Logic Baseline", "status": "VOID", "points": "0.0", "reason": "Skipped due to severe logic flaw."})
     elif verdict_correct:
         reward = 1.0
-        breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2"})
-        breakdown.append({"metric": "Logic Baseline", "status": "PASS", "points": "+0.3"})
-        breakdown.append({"metric": "Verdict Accuracy", "status": "PASS", "points": "+0.5"})
+        breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2", "reason": "No illegal numeric hallucinations found."})
+        breakdown.append({"metric": "Logic Baseline", "status": "PASS", "points": "+0.3", "reason": "Variables mapped structurally correctly."})
+        breakdown.append({"metric": "Verdict Accuracy", "status": "PASS", "points": "+0.5", "reason": "Predicted verdict matches empirical data."})
     elif not verdict_correct and not hallucination_detected:
         # Check if reasoning at least identified the variables correctly
         if ind_var in reasoning and dep_var in reasoning:
             reward = 0.5
-            breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2"})
-            breakdown.append({"metric": "Logic Baseline", "status": "PASS", "points": "+0.3"})
-            breakdown.append({"metric": "Verdict Accuracy", "status": "FAIL", "points": "0.0"})
+            breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2", "reason": "No illegal numbers hallucinational."})
+            breakdown.append({"metric": "Logic Baseline", "status": "PASS", "points": "+0.3", "reason": "Independent and dependent variables tracked correctly."})
+            breakdown.append({"metric": "Verdict Accuracy", "status": "FAIL", "points": "0.0", "reason": "The final conclusion was incorrect."})
         else:
             reward = 0.0
-            breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2"})
-            breakdown.append({"metric": "Logic Baseline", "status": "FAIL", "points": "-0.2"})
-            breakdown.append({"metric": "Verdict Accuracy", "status": "FAIL", "points": "0.0"})
+            breakdown.append({"metric": "Hallucination Check", "status": "PASS", "points": "+0.2", "reason": "No illegal numbers hallucinations."})
+            breakdown.append({"metric": "Logic Baseline", "status": "FAIL", "points": "-0.2", "reason": "Failed to reference the core mathematical variables."})
+            breakdown.append({"metric": "Verdict Accuracy", "status": "FAIL", "points": "0.0", "reason": "The final conclusion was completely incorrect."})
             
     return {
         "reward": reward,
