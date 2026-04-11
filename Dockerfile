@@ -1,17 +1,11 @@
-FROM python:3.10-slim
+FROM python:3.10
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
 
-# Deployment via Uvicorn for OpenEnv / Hugging Face Spaces
-EXPOSE 8000
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["uvicorn", "inference:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 7860
+
+CMD ["uvicorn", "inference:app", "--host", "0.0.0.0", "--port", "7860"]
