@@ -17,10 +17,10 @@ EPS = 0.01
 def safe_strict_float(value: Any, default: float = 0.5) -> float:
     try:
         x = float(value)
-        if math.isnan(x) or math.isinf(x): x = float(default)
-    except Exception: x = float(default)
-    if x < 0.01: return 0.01
-    if x > 0.99: return 0.99
+        if math.isnan(x) or math.isinf(x): x = 0.5
+    except Exception: x = 0.5
+    if x < 0.1: return 0.1
+    if x > 0.9: return 0.9
     return x
 
 def extract_numeric_values(data: List[Dict[str, Any]], key: str) -> List[float]:

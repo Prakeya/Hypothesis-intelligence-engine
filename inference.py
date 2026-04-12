@@ -60,7 +60,7 @@ def _normalize_action_data(action_data: Any) -> Dict[str, Any]:
         confidence = float(confidence_source)
     except Exception:
         confidence = 0.5
-    confidence = min(max(confidence, 0.01), 0.99)
+    confidence = min(max(confidence, 0.1), 0.9)
 
     return {
         "verdict": verdict,
@@ -109,7 +109,7 @@ def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last
     Review your previous reasoning. If flawed, correct it.
     Previous Reasoning: {prev_reasoning}
     
-    Output JSON with exactly: verdict (Supported, Refuted, or Inconclusive), reasoning (short explanation strictly grounded in evidence), and confidence (strictly between 0.01 and 0.94).
+    Output JSON with exactly: verdict (Supported, Refuted, or Inconclusive), reasoning (short explanation strictly grounded in evidence), and confidence (strictly between 0.1 and 0.9).
     """
     try:
         response = client.chat.completions.create(
@@ -214,7 +214,7 @@ async def main():
                 weighted_score = (last_reward * 0.7) + (avg_conf * 0.3)
                 
                 # Clamp boundaries safely above 0 and under 1
-                final_clamped_score = min(max(weighted_score, 0.01), 0.99)
+                final_clamped_score = min(max(weighted_score, 0.11), 0.89)
                 
                 print(f"[END] task={t_id} score={final_clamped_score} steps=3", flush=True)
                 
