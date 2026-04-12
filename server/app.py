@@ -243,30 +243,29 @@ def show_analysis_dialog():
     
     trend = eval_data.get('info', {}).get('trend', 'neutral')
     
-    if trend == "mixed":
-        status_text = "⚖️ MIXED EVIDENCE PATTERN"
-        status_color = "#fbbf24" # amber-400
-        subtext = "Dataset exhibits high directional volatility preventing a clean logic grounding."
-    elif trend == "neutral":
-        status_text = "🔍 WEAK SIGNAL"
-        status_color = "#a78bfa" # violet-400
-        subtext = "Insufficient gradient variance to establish a definitive logic grounding."
-    elif reward >= 0.85:
-        status_text = "🏆 OPTIMAL LOGIC GROUNDING"
-        status_color = "#4ade80"
-        subtext = "High-fidelity mapping between empirical trend and hypothesis."
-    elif reward >= 0.70:
-        status_text = "✔️ CONSISTENT ALIGNMENT"
-        status_color = "#60a5fa"
-        subtext = "Observation vectors support the hypothesis with high probability."
-    elif reward <= 0.30:
-        status_text = "❌ EMPIRICAL CONTRADICTION"
-        status_color = "#ef4444"
-        subtext = "Analytical evidence behaves in direct opposition to the hypothesis."
-    else:
+    # 1. Strong cases (Emerald)
+    if trend in ["strong_positive", "strong_negative"]:
+        status_text = "🏆 STRONG CORRELATION"
+        status_color = "#10b981" # emerald-500
+        subtext = "A clear directional relationship is consistently visible in the observed data."
+    
+    # 2. Moderate cases (Sky)
+    elif trend in ["positive", "negative"]:
         status_text = "📈 CORRELATION OBSERVED"
-        status_color = "#38bdf8" # sky-400
-        subtext = "Stable directional trend observed with moderate logical alignment."
+        status_color = "#0ea5e9" # sky-500
+        subtext = "A stable directional trend is visible in the current evidence."
+    
+    # 3. Mixed cases (Amber)
+    elif trend == "mixed":
+        status_text = "⚖️ MIXED EVIDENCE PATTERN"
+        status_color = "#f59e0b" # amber-500
+        subtext = "The evidence shifts in conflicting directions, limiting a single clean interpretation."
+    
+    # 4. Weak cases (Zinc)
+    else: # neutral
+        status_text = "🔍 WEAK SIGNAL"
+        status_color = "#71717a" # zinc-500
+        subtext = "The current dataset does not provide enough directional strength for a confident pattern claim."
 
     st.markdown(f"""
     <div class='glass-panel' style='display: flex; justify-content: space-between; align-items: center; border-left: 4px solid {status_color}; background: linear-gradient(90deg, {status_color}0A 0%, rgba(28,28,30,1) 100%);'>
@@ -285,16 +284,21 @@ def show_analysis_dialog():
     # --- EXECUTIVE BREAKDOWN (REFINED) ---
     st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Executive Audit Summary</div>", unsafe_allow_html=True)
     
-    trend = eval_data.get('info', {}).get('trend', 'Unknown')
     ind = obs.independent_var
     dep = obs.dependent_var
     v_color = "val-supported" if out['verdict'] == "Supported" else ("val-refuted" if out['verdict'] == "Refuted" else "val-inconclusive")
     
-    trend_cls = "trend-inc" if trend == "positive" else ("trend-dec" if trend == "negative" else "trend-mixed")
-    if trend == "positive": trend_desc = "Robust upward correlation"
-    elif trend == "negative": trend_desc = "Robust downward correlation"
-    elif trend == "mixed": trend_desc = "Volatile signal (Inconsistent)"
-    else: trend_desc = "Weak signal (Insufficient delta)"
+    trend_cls = "trend-inc" if "positive" in trend else ("trend-dec" if "negative" in trend else "trend-mixed")
+    if "strong" in trend: trend_label = "Strong " + ("Upward" if "positive" in trend else "Downward")
+    elif trend != "mixed" and trend != "neutral": trend_label = "Moderate " + ("Upward" if "positive" in trend else "Downward")
+    else: trend_label = trend.capitalize()
+
+    if trend == "strong_positive": trend_desc = "Highly consistent upward correlation"
+    elif trend == "strong_negative": trend_desc = "Highly consistent downward correlation"
+    elif trend == "positive": trend_desc = "Clear directional trend visible"
+    elif trend == "negative": trend_desc = "Inverse relationship visible"
+    elif trend == "mixed": trend_desc = "Evidence moves in mixed directions"
+    else: trend_desc = "Insufficient directional strength"
 
     sum_html = f"""
     <div class='glass-panel' style='padding: 2rem;'>

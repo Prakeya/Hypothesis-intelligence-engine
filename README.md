@@ -28,7 +28,7 @@ Our submission implements a **Zero-Trust Strategy** for reasoning validation, en
 - **12-Domain Benchmark Suite**: Covers Education, Health, Neuro, Physics, and more, with diverse trend patterns (Increasing, Decreasing, Mixed, Plateau).
 - **Isomorphic Consistency**: Guaranteed 1:1 logic parity between local development and the production server.
 - **Double-Guard Numeric Stability**: Every reward and confidence score passes through a strict `(0, 1)` open-interval clamp, trapping `NaN` and `Inf` leaks at the source.
-- **Robust Delta Validation**: Uses gradient-based delta ratios (70% threshold) to ensure logic grounding accuracy even in slightly noisy datasets.
+- **4-Tier Diagnostic Validation**: Graded trend analysis (Strong, Moderate, Mixed, Weak) for precise logic grounding.
 - **Precision Reconciliation**: Hallucination detection uses `math.isclose` with high-precision relative tolerances.
 
 ## 🛠️ Technical Features

@@ -44,7 +44,9 @@ def detect_trend(values: List[float]) -> str:
     if total == 0: return "neutral"
     pos_ratio = positive / total
     neg_ratio = negative / total
+    if pos_ratio >= 0.9: return "strong_positive"
     if pos_ratio >= 0.7: return "positive"
+    if neg_ratio >= 0.9: return "strong_negative"
     if neg_ratio >= 0.7: return "negative"
     return "mixed"
 
