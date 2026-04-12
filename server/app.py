@@ -238,6 +238,7 @@ def show_analysis_dialog():
     
     # --- DYNAMIC ALIGNMENT MATRIX (USER DEFINITIVE) ---
     info_data = eval_data.get('info', {})
+    reward = eval_data.get('reward', 0.5)
     diagnostics = info_data.get('diagnostics', {})
     c_dir = diagnostics.get("claim_direction")
     t_dir = diagnostics.get("trend_direction")
