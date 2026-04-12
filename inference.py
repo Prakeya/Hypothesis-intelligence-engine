@@ -207,7 +207,7 @@ async def main():
                     action_string = raw_action[:50].replace('\n', ' ')
                     done = getattr(reward_obj, "done", False)
                     
-                    print(f"[STEP] step={step} action={action_string} reward={last_reward} done={done}", flush=True)
+                    print(f"[STEP] step={step} action={action_string} reward={last_reward:.4f} done={done}", flush=True)
                     
                 # Setup final multi-variable score setup
                 avg_conf = sum(task_confidences) / max(1, len(task_confidences))
@@ -216,7 +216,7 @@ async def main():
                 # Clamp boundaries safely above 0 and under 1
                 final_clamped_score = min(max(weighted_score, 0.11), 0.89)
                 
-                print(f"[END] task={t_id} score={final_clamped_score} steps=3", flush=True)
+                print(f"[END] task={t_id} score={final_clamped_score:.4f} steps=3", flush=True)
                 
         except Exception as eInner:
             print(f"[DEBUG] Inner task crashed: {eInner}", flush=True)

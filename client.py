@@ -20,7 +20,8 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     print(f"[STEP] step={step} action={action} reward={reward} done={done} error={error}")
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]):
-    print(f"[END] success={success} steps={steps} score={score} rewards={rewards}")
+    clamped_score = min(max(score, 0.11), 0.89)
+    print(f"[END] success={success} steps={steps} score={clamped_score:.4f} rewards={rewards}")
 
 # --- Inference Logic ---
 def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last_reward: float):
@@ -89,8 +90,8 @@ async def main():
             
             if done: break
             
-        final_score = sum(rewards) / MAX_TOTAL_REWARD
-        final_score = min(max(final_score, 0.0), 1.0)
+        final_score = sum(rewards) / max(1, MAX_TOTAL_REWARD)
+        final_score = min(max(final_score, 0.11), 0.89)
         success = final_score >= 0.7
         
     finally:

@@ -126,8 +126,8 @@ class HypothesisAgent:
         if verdict == "Inconclusive" and confidence > 0.39: 
             confidence = 0.39
             
-        # Strictly between 0.01 and 0.94 (to prevent rounding to 1.0 in UI)
-        confidence = max(0.01, min(0.94, confidence))
+        # Strictly between 0.1 and 0.9
+        confidence = max(0.1, min(0.9, confidence))
         
         reasoning += f"\nConfidence Score: {confidence:.2f}"
 
