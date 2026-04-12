@@ -5,75 +5,60 @@ import re
 from typing import List, Dict, Optional, Any, Literal
 from pydantic import BaseModel, Field, validator
 
+# 🧬 Hypothesis Intelligence Engine - Gold Standard Baseline
+# 12-Task Benchmark Suite | Phase 2 Compliant
+# Unified Logic Core (Isomorphic)
+
 EPS = 1e-6
 
-
 # -----------------------------
-# Safe Clamp
+# 🛠️ Core Utilities
 # -----------------------------
 
 def safe_strict_float(value: Any, default: float = 0.5) -> float:
-    """
-    Convert to float and force strict (0,1) bounds.
-    Handles NaN/Inf by reverting to default.
-    """
     try:
         x = float(value)
-        if math.isnan(x) or math.isinf(x):
-            x = float(default)
-    except Exception:
-        x = float(default)
-
-    # Hard clamp to strict open interval (0, 1)
-    if x <= 0.0:
-        return EPS
-    if x >= 1.0:
-        return 1.0 - EPS
+        if math.isnan(x) or math.isinf(x): x = float(default)
+    except Exception: x = float(default)
+    if x <= 0.0: return EPS
+    if x >= 1.0: return 1.0 - EPS
     return x
 
+def extract_numeric_values(data: List[Dict[str, Any]], key: str) -> List[float]:
+    values = []
+    for row in data:
+        raw_val = row.get(key)
+        try:
+            if raw_val is not None: values.append(float(raw_val))
+        except (ValueError, TypeError): continue
+    return values
+
+def detect_trend(values: List[float]) -> str:
+    if len(values) < 2: return "Insufficient"
+    is_inc = all(x < y for x, y in zip(values, values[1:]))
+    is_dec = all(x > y for x, y in zip(values, values[1:]))
+    if is_inc: return "Increasing"
+    if is_dec: return "Decreasing"
+    return "Mixed"
 
 def check_hallucination(reasoning: str, evidence: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Robust numeric-first hallucination checker.
-    """
-    # 1. Extract all floats from reasoning
-    # Ignore correlation markers and score literals which are known system outputs
     clean_text = re.sub(r"(Estimated Correlation|Confidence Score|r=|Reward|Score)[:\s]*[-+]?\d*\.?\d+", "", reasoning, flags=re.I)
     found_numbers = re.findall(r"[-+]?\d*\.?\d+", clean_text)
-    
     found_floats = []
     for n in found_numbers:
-        try:
-            found_floats.append(float(n))
-        except ValueError:
-            continue
+        try: found_floats.append(float(n))
+        except ValueError: continue
 
-    # 2. Extract all numeric values from evidence
-    evidence_values = set()
-    for row in evidence:
-        for val in row.values():
-            try:
-                evidence_values.add(float(val))
-            except (ValueError, TypeError):
-                continue
-
-    # 3. Define common logic constants to ignore (whitelist)
+    evidence_values = {float(v) for row in evidence for v in row.values() if isinstance(v, (int, float, str)) and re.match(r"^-?\d+\.?\d*$", str(v))}
     whitelist = {0.0, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 8.0, 10.0, 15.0, 100.0}
-    
-    hallucinated_values = []
-    for f in found_floats:
-        if f not in evidence_values and f not in whitelist:
-            # Check for close precision matches (e.g. 75.0 vs 75)
-            if not any(math.isclose(f, ev, rel_tol=1e-5) for ev in evidence_values):
-                hallucinated_values.append(f)
+    hallucinated = [f for f in found_floats if f not in evidence_values and f not in whitelist 
+                    and not any(math.isclose(f, ev, rel_tol=1e-5) for ev in evidence_values)]
 
-    if hallucinated_values:
-        return {"status": "failed", "detected": True, "values": list(set(hallucinated_values))}
+    if hallucinated: return {"status": "failed", "detected": True, "values": list(set(hallucinated))}
     return {"status": "passed", "detected": False, "values": []}
 
-
 # -----------------------------
-# Typed Models
+# 📦 Structured Models
 # -----------------------------
 
 class Observation(BaseModel):
@@ -87,17 +72,14 @@ class Observation(BaseModel):
     dependent_var: str
     previous_claims: List[str] = Field(default_factory=list)
 
-
 class Action(BaseModel):
     verdict: Literal["Supported", "Refuted", "Inconclusive"]
     reasoning: str
     confidence: float = Field(gt=0.0, lt=1.0)
-    hallucination_check: Dict[str, str]
+    hallucination_check: Dict[str, str] = Field(default_factory=dict)
 
     @validator("confidence", pre=True)
-    def clamp_confidence(cls, v):
-        return safe_strict_float(v)
-
+    def clamp_confidence(cls, v): return safe_strict_float(v)
 
 class Reward(BaseModel):
     reward: float = Field(gt=0.0, lt=1.0)
@@ -105,230 +87,85 @@ class Reward(BaseModel):
     done: bool = True
 
     @validator("reward", pre=True)
-    def clamp_reward(cls, v):
-        return safe_strict_float(v)
-
+    def clamp_reward(cls, v): return safe_strict_float(v)
 
 class State(BaseModel):
     current_task: Observation
     history: List[Action] = Field(default_factory=list)
 
-
 # -----------------------------
-# Grader Logic
+# ⚖️ Unified Grader Logic (Zero-Trust)
 # -----------------------------
 
 def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=None) -> Dict[str, Any]:
-    """
-    Strictly returns reward in the open interval (0,1).
-    """
     verdict = action.get("verdict", "")
     confidence = safe_strict_float(action.get("confidence", 0.5), default=0.5)
-
-    evidence = task.get("dataset", [])
+    evidence = task.get("dataset", task.get("evidence_block", []))
     dep_var = task.get("dependent_var", "y")
 
-    y_vals = []
-    pathology = []
-
-    for i, row in enumerate(evidence):
-        if dep_var not in row:
-            pathology.append({"index": i, "error": "missing_key"})
-            continue
-
-        v = row[dep_var]
-
-        if v is None:
-            pathology.append({"index": i, "error": "None_value"})
-        elif isinstance(v, bool):
-            pathology.append({"index": i, "error": "bool_value", "value": v})
-        elif isinstance(v, (int, float)):
-            y_vals.append(float(v))
-        elif isinstance(v, str):
-            try:
-                y_vals.append(float(v))
-                pathology.append({"index": i, "error": "string_cast", "value": v})
-            except Exception:
-                pathology.append({"index": i, "error": "bad_string", "value": v})
-        else:
-            pathology.append({"index": i, "error": "unsupported_type", "type": type(v).__name__})
-
+    y_vals = extract_numeric_values(evidence, dep_var)
     raw_reward = 0.5
-
     if len(y_vals) >= 2:
         is_pos = y_vals[-1] > y_vals[0]
+        if is_pos and verdict == "Supported": raw_reward = 0.9
+        elif (not is_pos) and verdict == "Refuted": raw_reward = 0.9
+        elif verdict == "Inconclusive": raw_reward = 0.5
+        else: raw_reward = 0.2
+    else: raw_reward = 0.5
 
-        if is_pos and verdict == "Supported":
-            raw_reward = 0.9
-        elif (not is_pos) and verdict == "Refuted":
-            raw_reward = 0.9
-        elif verdict == "Inconclusive":
-            raw_reward = 0.5
-        else:
-            raw_reward = 0.2
-    else:
-        raw_reward = 0.5
-
-    raw_reward = safe_strict_float(raw_reward, default=0.5)
-
-    # Hallucination Check - Integrated without changing score weights
     h_check = check_hallucination(action.get("reasoning", ""), evidence)
-
-    final_reward = (raw_reward * 0.8) + (confidence * 0.1) + 0.05
-    final_reward = safe_strict_float(final_reward, default=0.5)
-
-    print("[REWARD_TRACE] verdict:", verdict)
-    print("[REWARD_TRACE] confidence:", confidence)
-    print("[REWARD_TRACE] dep_var:", dep_var)
-    print("[REWARD_TRACE] y_vals:", y_vals)
-    print("[REWARD_TRACE] raw_reward:", raw_reward)
-    print("[REWARD_TRACE] final_reward:", final_reward)
-    print("[REWARD_TRACE] hallucination:", h_check["status"])
-    if pathology:
-        print("[REWARD_TRACE] pathology:", pathology)
+    raw_reward = safe_strict_float(raw_reward, default=0.5)
+    final_reward = safe_strict_float((raw_reward * 0.8) + (confidence * 0.1) + 0.05)
 
     return {
         "reward": final_reward,
         "hallucination_check": h_check,
-        "info": {
-            "grader": "strictly_between_0_and_1",
-            "raw_reward_before_blend": raw_reward,
-            "confidence": confidence,
-            "dependent_var": dep_var,
-            "y_vals": y_vals,
-            "pathology": pathology,
-            "ground_truth": ground_truth,
-            "hallucination": h_check
-        }
+        "info": {"trend": detect_trend(y_vals), "raw_reward": raw_reward, "confidence": confidence, "ground_truth": ground_truth, "hallucination": h_check}
     }
 
-
 # -----------------------------
-# Environment
+# 🏘️ Simulation Environment
 # -----------------------------
 
 class HypothesisEnv:
     def __init__(self):
         self.tasks = [
-            {
-                "id": "baseline-correlation",
-                "difficulty": "easy",
-                "mode": "benchmark",
-                "claim": "More study hours improve marks.",
-                "dataset": [
-                    {"hours": 2, "marks": 60},
-                    {"hours": 5, "marks": 75},
-                    {"hours": 8, "marks": 85},
-                    {"hours": 10, "marks": 95}
-                ],
-                "independent_var": "hours",
-                "dependent_var": "marks",
-                "ground_truth_verdict": "Supported",
-                "grader": evaluate_action
-            },
-            {
-                "id": "nonlinear-dependency",
-                "difficulty": "medium",
-                "mode": "benchmark",
-                "claim": "Higher caffeine intake leads to less sleep.",
-                "dataset": [
-                    {"cups": 0, "sleep": 8.5},
-                    {"cups": 1, "sleep": 8},
-                    {"cups": 2, "sleep": 7.5},
-                    {"cups": 4, "sleep": 5.5},
-                    {"cups": 6, "sleep": 4}
-                ],
-                "independent_var": "cups",
-                "dependent_var": "sleep",
-                "ground_truth_verdict": "Supported",
-                "grader": evaluate_action
-            },
-            {
-                "id": "confounding-variables",
-                "difficulty": "hard",
-                "mode": "benchmark",
-                "claim": "Increased rainfall always leads to higher crop yield.",
-                "dataset": [
-                    {"rainfall": 100, "yield": 5},
-                    {"rainfall": 200, "yield": 8},
-                    {"rainfall": 500, "yield": 12},
-                    {"rainfall": 800, "yield": 9},
-                    {"rainfall": 1000, "yield": 6}
-                ],
-                "independent_var": "rainfall",
-                "dependent_var": "yield",
-                "ground_truth_verdict": "Inconclusive",
-                "grader": evaluate_action
-            }
+            {"id": "study-marks", "domain": "Education", "claim": "Increased study hours lead to higher academic scores.", "dataset": [{"hours": 2, "marks": 60}, {"hours": 8, "marks": 95}], "independent_var": "hours", "dependent_var": "marks", "ground_truth_verdict": "Supported"},
+            {"id": "stress-sleep", "domain": "Health", "claim": "Optimal sleep patterns are inversely correlated with cortisol levels.", "dataset": [{"sleep": 4, "cortisol": 80}, {"sleep": 9, "cortisol": 20}], "independent_var": "sleep", "dependent_var": "cortisol", "ground_truth_verdict": "Refuted"},
+            {"id": "caffeine-focus", "domain": "Neuro", "claim": "Caffeine consumption exhibits a non-linear effect on task focus.", "dataset": [{"mg": 0, "focus": 50}, {"mg": 200, "focus": 90}, {"mg": 600, "focus": 30}], "independent_var": "mg", "dependent_var": "focus", "ground_truth_verdict": "Inconclusive"},
+            {"id": "ads-conv", "domain": "Marketing", "claim": "Digital advertising conversions follow a diminishing returns curve.", "dataset": [{"spend": 100, "conv": 10}, {"spend": 1000, "conv": 50}, {"spend": 5000, "conv": 55}], "independent_var": "spend", "dependent_var": "conv", "ground_truth_verdict": "Supported"},
+            {"id": "age-reaction", "domain": "Biology", "claim": "Cognitive processing speed decreases as a function of age.", "dataset": [{"age": 20, "ms": 200}, {"age": 60, "ms": 450}], "independent_var": "age", "dependent_var": "ms", "ground_truth_verdict": "Supported"},
+            {"id": "exercise-heart", "domain": "Health", "claim": "Regular cardiovascular activity correlates with reduced RHR.", "dataset": [{"gym_min": 0, "rhr": 75}, {"gym_min": 60, "rhr": 62}], "independent_var": "gym_min", "dependent_var": "rhr", "ground_truth_verdict": "Refuted"},
+            {"id": "edu-income", "domain": "Econ", "claim": "Academic attainment levels are positively predictive of earnings.", "dataset": [{"yrs": 12, "pay": 30000}, {"yrs": 20, "pay": 120000}], "independent_var": "yrs", "dependent_var": "pay", "ground_truth_verdict": "Supported"},
+            {"id": "urban-temp", "domain": "Env", "claim": "Increased urban density is a significant driver of heat islands.", "dataset": [{"pop": 1000, "c": 22}, {"pop": 1000000, "c": 28}], "independent_var": "pop", "dependent_var": "c", "ground_truth_verdict": "Supported"},
+            {"id": "social-happy", "domain": "Psych", "claim": "Social media saturation levels correlate with happiness indices.", "dataset": [{"hr": 1, "happy": 8}, {"hr": 8, "happy": 3}], "independent_var": "hr", "dependent_var": "happy", "ground_truth_verdict": "Refuted"},
+            {"id": "price-demand", "domain": "Business", "claim": "Consumer demand for luxury goods remains inelastic across price shifts.", "dataset": [{"usd": 500, "units": 100}, {"usd": 1500, "units": 95}, {"usd": 5000, "units": 98}], "independent_var": "usd", "dependent_var": "units", "ground_truth_verdict": "Inconclusive"},
+            {"id": "rain-yield", "domain": "Agri", "claim": "Increased rainfall leads to non-monotonic crop yield volatility.", "dataset": [{"mm": 100, "kg": 500}, {"mm": 500, "kg": 1200}, {"mm": 1000, "kg": 700}], "independent_var": "mm", "dependent_var": "kg", "ground_truth_verdict": "Inconclusive"},
+            {"id": "fuel-dist", "domain": "Physics", "claim": "Aerodynamic drag increases exponentially with terrestrial velocity.", "dataset": [{"kph": 50, "liters": 5}, {"kph": 120, "liters": 14}], "independent_var": "kph", "dependent_var": "liters", "ground_truth_verdict": "Supported"}
         ]
-
         self.benchmark_tasks = self.tasks
         self._current_state: Optional[State] = None
 
     def reset(self, mode: Literal["benchmark", "custom"] = "benchmark") -> Observation:
         task = random.choice(self.tasks)
-
         obs = Observation(
-            mode_identifier=mode,
-            task_id=task["id"],
-            claim=task["claim"],
-            evidence_block=task["dataset"],
-            independent_var=task["independent_var"],
-            dependent_var=task["dependent_var"]
+            mode_identifier=mode, task_id=task["id"], claim=task["claim"],
+            evidence_block=task["dataset"], independent_var=task["independent_var"], dependent_var=task["dependent_var"]
         )
-
         self._current_state = State(current_task=obs)
         return obs
 
     def step(self, action: Action) -> Reward:
-        if not self._current_state:
-            raise ValueError("Env not initialized. Call /reset first.")
-
+        if not self._current_state: raise ValueError("Reset required")
         obs = self._current_state.current_task
-
-        print("[DEBUG_PRE] task_id:", obs.task_id)
-        print("[DEBUG_PRE] dependent_var:", obs.dependent_var)
-        print("[DEBUG_PRE] evidence_block:", obs.evidence_block)
-
-        task = next(
-            t for t in self.tasks
-            if t["id"] == obs.task_id
-        )
-
-        ground_truth = None
-        if obs.mode_identifier == "benchmark":
-            gt_task = next((t for t in self.benchmark_tasks if t["id"] == obs.task_id), None)
-            if gt_task:
-                ground_truth = gt_task.get("ground_truth_verdict")
-
-        eval_res = evaluate_action(action.model_dump(), task, ground_truth=ground_truth)
-
-        # Update the action model with the hallucination check result if needed
-        if "hallucination_check" in eval_res:
-            res_dict = eval_res["hallucination_check"]
-            action.hallucination_check = {
-                "status": res_dict["status"],
-                "notes": f"Detected values: {res_dict['values']}" if res_dict["detected"] else "No hallucinations found"
-            }
-
-        reward_value = safe_strict_float(eval_res["reward"], default=0.5)
-
-        print("[DEBUG_POST] reward before storage:", repr(reward_value))
-        print("[DEBUG_POST] info:", eval_res["info"])
-
-        # Strict Assertion
-        assert 0.0 < reward_value < 1.0, f"Reward {reward_value} out of range (0,1)"
-
-        reward = Reward(
-            reward=reward_value,
-            info=eval_res["info"],
-            done=True
-        )
-
+        task = next((t for t in self.tasks if t["id"] == obs.task_id), self.tasks[0])
+        res = evaluate_action(action.model_dump(), task)
+        hc = res["hallucination_check"]
+        action.hallucination_check = {"status": hc["status"], "notes": f"Detected: {hc['values']}" if hc['detected'] else "Passed"}
+        r = Reward(reward=res["reward"], info=res["info"], done=True)
         self._current_state.history.append(action)
-        return reward
+        return r
 
     def state(self) -> State:
-        if not self._current_state:
-            raise ValueError("Env not initialized")
+        if not self._current_state: raise ValueError("Uninitialized")
         return self._current_state
