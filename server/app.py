@@ -244,26 +244,32 @@ def show_analysis_dialog():
     status_color = "#FFFFFF"
     
     if h_detected:
-        status_text = "⚠️ INTEGRITY ANOMALY DETECTED"
-        status_color = "#f87171"
+        status_text = "⚠️ DATA–HYPOTHESIS MISALIGNMENT"
+        status_color = "#fcd34d" # amber-300
+        subtext = "Detected a mismatch between inferred trend and claim expectation."
     elif out['verdict'] == "Inconclusive":
         status_text = "⚖️ SIGNAL AMBIGUITY"
-        status_color = "#fbbf24"
+        status_color = "#fbbf24" # amber-400
+        subtext = "Evidence exhibits non-monotonic traits preventing definitive logic grounding."
     elif reward >= 0.85:
         status_text = "🏆 OPTIMAL LOGIC GROUNDING"
         status_color = "#4ade80"
+        subtext = "High-fidelity mapping between empirical trend and hypothesis."
     elif reward >= 0.70:
         status_text = "✔️ CONSISTENT ALIGNMENT"
         status_color = "#60a5fa"
+        subtext = "Observation vectors support the hypothesis with high probability."
     elif reward <= 0.30:
         status_text = "❌ EMPIRICAL CONTRADICTION"
         status_color = "#ef4444"
+        subtext = "Analytical evidence behaves in direct opposition to the hypothesis."
     else:
         status_text = "🔍 PARTIAL CORRELATION"
         status_color = "#a78bfa"
+        subtext = "Weak or non-linear correlation observed within the current scope."
 
     st.markdown(f"""
-    <div class='glass-panel' style='display: flex; justify-content: space-between; align-items: center;'>
+    <div class='glass-panel' style='display: flex; justify-content: space-between; align-items: center; border-left: 4px solid {status_color}; background: linear-gradient(90deg, {status_color}0A 0%, rgba(28,28,30,1) 100%);'>
         <div>
             <div style='font-size: 0.7rem; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 2px;'>AUDIT VERDICT</div>
             <div style='font-size: 2.8rem; font-family: Outfit, sans-serif; color: #FFF; font-weight: 800; margin-top: 0.2rem;'>{out['verdict']}</div>
@@ -271,6 +277,7 @@ def show_analysis_dialog():
         <div style='text-align: right;'>
             <div style='font-size: 0.7rem; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;'>SYSTEM STATUS</div>
             <div style='display: inline-block; padding: 0.6rem 1.5rem; border-radius: 50px; background: rgba(255,255,255,0.03); border: 1px solid {status_color}44; color: {status_color}; font-family: Outfit, sans-serif; font-weight: 700; font-size: 0.9rem;'>{status_text}</div>
+            <div style='font-size: 0.75rem; color: #666; margin-top: 0.5rem; font-weight: 400;'>{subtext}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
