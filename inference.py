@@ -39,7 +39,7 @@ def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last
     Review your previous reasoning. If flawed, correct it.
     Previous Reasoning: {prev_reasoning}
     
-    Output JSON with exactly: verdict (Supported, Refuted, or Inconclusive), reasoning (short explanation strictly grounded in evidence), and confidence_score (0.0 to 1.0).
+    Output JSON with exactly: verdict (Supported, Refuted, or Inconclusive), reasoning (short explanation strictly grounded in evidence), and confidence_score (strictly between 0.01 and 0.94).
     """
     try:
         response = client.chat.completions.create(
