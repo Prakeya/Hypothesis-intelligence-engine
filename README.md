@@ -28,7 +28,8 @@ Our submission implements a **Zero-Trust Strategy** for reasoning validation, en
 - **12-Domain Benchmark Suite**: Covers Education, Health, Neuro, Physics, and more, with diverse trend patterns (Increasing, Decreasing, Mixed, Plateau).
 - **Isomorphic Consistency**: Guaranteed 1:1 logic parity between local development and the production server.
 - **Double-Guard Numeric Stability**: Every reward and confidence score passes through a strict `(0, 1)` open-interval clamp, trapping `NaN` and `Inf` leaks at the source.
-- **Precision Reconciliation**: Hallucination detection uses `math.isclose` with high-precision relative tolerances to distinguish between rounding errors and actual data fabrication.
+- **Diagnostic Signal Reconciliation**: Detects **Data–Hypothesis Misalignment** using monotonic gradient checks to identify conflicts between evidence and claims.
+- **Precision Reconciliation**: Hallucination detection uses `math.isclose` with high-precision relative tolerances.
 
 ## 🛠️ Technical Features
 - **Pydantic V2 Integrity**: Strict schema enforcement at the API boundary ensures that all payloads are validated before reaching the environment core.

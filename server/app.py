@@ -238,12 +238,14 @@ def show_analysis_dialog():
     
     # --- DYNAMIC STATUS MAPPING ---
     reward = eval_data.get('reward', 0.5)
-    h_detected = eval_data.get('info', {}).get('hallucination', {}).get('detected', False)
+    info_data = eval_data.get('info', {})
+    diagnostics = info_data.get('diagnostics', {})
+    is_misaligned = diagnostics.get("alignment") == "misaligned"
     
     status_text = "System Initialized"
     status_color = "#FFFFFF"
     
-    if h_detected:
+    if is_misaligned:
         status_text = "⚠️ DATA–HYPOTHESIS MISALIGNMENT"
         status_color = "#fcd34d" # amber-300
         subtext = "Detected a mismatch between inferred trend and claim expectation."
