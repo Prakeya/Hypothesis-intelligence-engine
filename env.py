@@ -116,10 +116,6 @@ def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=N
     raw_reward = safe_strict_float(raw_reward, default=0.5)
     final_reward = safe_strict_float((raw_reward * 0.8) + (confidence * 0.1) + 0.05)
 
-    # Final Reward Calculation
-    raw_reward = safe_strict_float(raw_reward, default=0.5)
-    final_reward = safe_strict_float((raw_reward * 0.8) + (confidence * 0.1) + 0.05)
-
     return {
         "reward": final_reward,
         "hallucination_check": h_check,
