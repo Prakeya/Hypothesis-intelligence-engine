@@ -121,8 +121,14 @@ class HypothesisAgent:
                 else:
                     reasoning += f"Because the relationship between `{ind_var}` and `{dep_var}` fluctuates wildly instead of following a strict pattern (r={r_val:.2f}, direction={overall_direction}), the claim is **Inconclusive**."
 
+        # Confidence calculation with strict bounds
         confidence = float(abs(r_val))
-        if verdict == "Inconclusive" and confidence > 0.39: confidence = 0.39
+        if verdict == "Inconclusive" and confidence > 0.39: 
+            confidence = 0.39
+            
+        # Strictly between 0.01 and 0.94 (to prevent rounding to 1.0 in UI)
+        confidence = max(0.01, min(0.94, confidence))
+        
         reasoning += f"\nConfidence Score: {confidence:.2f}"
 
         return {

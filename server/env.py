@@ -63,8 +63,8 @@ def evaluate_action(action, task, ground_truth=None):
             raw_reward = 0.5
             breakdown.append({"metric": "Logic Baseline", "status": "PASS", "points": "+0.3", "reason": "Variables mapped."})
             
-    # Strictly between 0 and 1: Use confidence to nudge but stay away from boundaries
-    final_reward = (raw_reward * 0.8) + (confidence * 0.1) + 0.05
+    # Strictly between 0.01 and 0.94: Use confidence to nudge but stay away from boundaries
+    final_reward = min(0.94, (raw_reward * 0.8) + (confidence * 0.1) + 0.05)
             
     return {
         "reward": final_reward,

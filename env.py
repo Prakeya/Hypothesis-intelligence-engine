@@ -66,8 +66,8 @@ def evaluate_action(action, task, ground_truth=None):
     else:
         raw_reward = 0.5
 
-    # Strictly between 0 and 1: Use confidence to nudge but stay away from boundaries
-    final_reward = (raw_reward * 0.8) + (confidence * 0.1) + 0.05
+    # Strictly between 0 and 0.94: Use confidence to nudge but stay away from boundaries for UI rounding
+    final_reward = min(0.94, (raw_reward * 0.8) + (confidence * 0.1) + 0.05)
     # final_reward will be:
     # Max: (0.9 * 0.8) + (1.0 * 0.1) + 0.05 = 0.72 + 0.1 + 0.05 = 0.87
     # Min: (0.2 * 0.8) + (0.0 * 0.1) + 0.05 = 0.16 + 0.05 = 0.21

@@ -152,7 +152,9 @@ header, footer, [data-testid="stHeader"] {visibility: hidden;}
 
 /* Annihilate Streamlit's Native React Unmount Lag & Fade Ghosting */
 * {
+    animation: none !important;
     animation-duration: 0.0s !important; 
+    transition: none !important;
     transition-duration: 0.0s !important;
 }
 [data-testid="stAppViewContainer"] * {
