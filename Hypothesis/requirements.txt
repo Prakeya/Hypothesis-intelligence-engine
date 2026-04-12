@@ -1,6 +1,0 @@
-pydantic
-openai
-fastapi
-uvicorn
-python-dotenv
-numpy
