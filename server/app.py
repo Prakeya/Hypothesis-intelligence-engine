@@ -246,9 +246,13 @@ def show_analysis_dialog():
     status_color = "#FFFFFF"
     
     if is_misaligned:
-        status_text = "⚠️ DATA–HYPOTHESIS MISALIGNMENT"
+        if out['verdict'] == "Inconclusive" or info_data.get("trend") == "Mixed":
+            status_text = "⚠️ MIXED EVIDENCE PATTERN"
+            subtext = "Analytical evidence exhibits non-monotonic traits or signal noise."
+        else:
+            status_text = "⚠️ DATA–HYPOTHESIS MISALIGNMENT"
+            subtext = "Detected a mismatch between inferred trend and claim expectation."
         status_color = "#fcd34d" # amber-300
-        subtext = "Detected a mismatch between inferred trend and claim expectation."
     elif out['verdict'] == "Inconclusive":
         status_text = "⚖️ SIGNAL AMBIGUITY"
         status_color = "#fbbf24" # amber-400

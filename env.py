@@ -98,22 +98,27 @@ class State(BaseModel):
 
 def detect_claim_direction(claim: str) -> str:
     text = claim.lower()
-    if any(x in text for x in ["increase", "improve", "rise", "higher", "more", "lead to higher"]): return "positive"
-    if any(x in text for x in ["decrease", "reduce", "lower", "less", "fall", "lead to lower"]): return "negative"
+    if any(x in text for x in ["increase", "improve", "rise", "higher", "more"]): return "positive"
+    if any(x in text for x in ["decrease", "reduce", "lower", "less", "fall"]): return "negative"
     return "neutral"
 
-def detect_trend_direction(y_vals: List[float]) -> str:
+def detect_trend_direction(y_vals: List[float], trend_str: str) -> str:
+    if trend_str == "Mixed": return "mixed"
     if len(y_vals) < 2: return "neutral"
     if y_vals[-1] > y_vals[0]: return "positive"
     if y_vals[-1] < y_vals[0]: return "negative"
     return "neutral"
 
 def check_alignment(claim_dir: str, trend_dir: str, verdict: str) -> str:
-    if verdict == "Inconclusive": return "aligned"
-    if claim_dir == "positive" and trend_dir == "positive" and verdict == "Supported": return "aligned"
-    if claim_dir == "negative" and trend_dir == "negative" and verdict == "Supported": return "aligned"
-    if claim_dir == "positive" and trend_dir == "negative" and verdict == "Refuted": return "aligned"
-    if claim_dir == "negative" and trend_dir == "positive" and verdict == "Refuted": return "aligned"
+    # Strict Alignment Rules
+    if verdict == "Supported":
+        if claim_dir == "positive" and trend_dir == "positive": return "aligned"
+        if claim_dir == "negative" and trend_dir == "negative": return "aligned"
+    if verdict == "Refuted":
+        if claim_dir == "positive" and trend_dir == "negative": return "aligned"
+        if claim_dir == "negative" and trend_dir == "positive": return "aligned"
+    if verdict == "Inconclusive":
+        if trend_dir in ["mixed", "neutral"]: return "aligned"
     return "misaligned"
 
 def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=None) -> Dict[str, Any]:
@@ -137,15 +142,16 @@ def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=N
     final_reward = safe_strict_float((raw_reward * 0.8) + (confidence * 0.1) + 0.05)
 
     # Diagnostic Logic Alignment
+    trend_str = detect_trend(y_vals)
     claim_dir = detect_claim_direction(task.get("claim", ""))
-    trend_dir = detect_trend_direction(y_vals)
+    trend_dir = detect_trend_direction(y_vals, trend_str)
     alignment = check_alignment(claim_dir, trend_dir, verdict)
 
     return {
         "reward": final_reward,
         "hallucination_check": h_check,
         "info": {
-            "trend": detect_trend(y_vals), 
+            "trend": trend_str, 
             "raw_reward": raw_reward, 
             "confidence": confidence, 
             "ground_truth": ground_truth, 
