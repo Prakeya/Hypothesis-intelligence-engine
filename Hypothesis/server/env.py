@@ -4,6 +4,7 @@ import json
 import os
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Any, Literal
+from server.grader import evaluate_action
 
 # --- OpenEnv Typed Models ---
 
@@ -40,7 +41,7 @@ class HypothesisEnv:
         # Structured Benchmarking Tasks
         self.benchmark_tasks = [
             {
-                "id": "bench-01",
+                "id": "baseline-correlation",
                 "mode": "benchmark",
                 "claim": "Increased study hours lead to higher marks.",
                 "dataset": [
@@ -52,10 +53,11 @@ class HypothesisEnv:
                 "independent_var": "hours",
                 "dependent_var": "marks",
                 "ground_truth_verdict": "Inconclusive",
-                "domain": "Education"
+                "domain": "Education",
+                "grader": evaluate_action
             },
             {
-                "id": "bench-02",
+                "id": "nonlinear-dependency",
                 "mode": "benchmark",
                 "claim": "Coffee consumption reduces sleep duration.",
                 "dataset": [
@@ -67,10 +69,11 @@ class HypothesisEnv:
                 "independent_var": "cups",
                 "dependent_var": "sleep",
                 "ground_truth_verdict": "Supported",
-                "domain": "Health"
+                "domain": "Health",
+                "grader": evaluate_action
             },
             {
-                "id": "bench-03",
+                "id": "confounding-variables",
                 "mode": "benchmark",
                 "claim": "Higher temperatures decrease umbrella sales.",
                 "dataset": [
@@ -81,7 +84,8 @@ class HypothesisEnv:
                 "independent_var": "temp",
                 "dependent_var": "sales",
                 "ground_truth_verdict": "Supported",
-                "domain": "Retail"
+                "domain": "Retail",
+                "grader": evaluate_action
             },
             {
                 "id": "bench-04",
@@ -95,7 +99,8 @@ class HypothesisEnv:
                 "independent_var": "sugar_g",
                 "dependent_var": "weight",
                 "ground_truth_verdict": "Refuted",
-                "domain": "Nutrition"
+                "domain": "Nutrition",
+                "grader": evaluate_action
             },
             {
                 "id": "bench-05",
@@ -109,7 +114,8 @@ class HypothesisEnv:
                 "independent_var": "color",
                 "dependent_var": "speed",
                 "ground_truth_verdict": "Inconclusive",
-                "domain": "Sports"
+                "domain": "Sports",
+                "grader": evaluate_action
             },
             {
                 "id": "bench-06",
@@ -123,9 +129,10 @@ class HypothesisEnv:
                 "independent_var": "rate",
                 "dependent_var": "apps",
                 "ground_truth_verdict": "Supported",
-                "domain": "Finance"
+                "domain": "Finance",
+                "grader": evaluate_action
             },
-             {
+            {
                 "id": "bench-07",
                 "mode": "benchmark",
                 "claim": "Increased ad spend results in lower total revenue.",
@@ -137,7 +144,8 @@ class HypothesisEnv:
                 "independent_var": "ad_spend",
                 "dependent_var": "revenue",
                 "ground_truth_verdict": "Refuted",
-                "domain": "Marketing"
+                "domain": "Marketing",
+                "grader": evaluate_action
             },
             {
                 "id": "bench-08",
@@ -151,7 +159,8 @@ class HypothesisEnv:
                 "independent_var": "meditation_mins",
                 "dependent_var": "recall",
                 "ground_truth_verdict": "Supported",
-                "domain": "Psychology"
+                "domain": "Psychology",
+                "grader": evaluate_action
             },
             {
                 "id": "bench-09",
@@ -165,7 +174,8 @@ class HypothesisEnv:
                 "independent_var": "altitude_m",
                 "dependent_var": "pressure_hpa",
                 "ground_truth_verdict": "Supported",
-                "domain": "Physics"
+                "domain": "Physics",
+                "grader": evaluate_action
             },
             {
                 "id": "bench-10",
@@ -179,7 +189,8 @@ class HypothesisEnv:
                 "independent_var": "books_per_month",
                 "dependent_var": "vocab",
                 "ground_truth_verdict": "Refuted",
-                "domain": "Linguistics"
+                "domain": "Linguistics",
+                "grader": evaluate_action
             }
         ]
         self._current_state: Optional[State] = None
@@ -225,7 +236,7 @@ class HypothesisEnv:
         if not self._current_state:
             raise ValueError("Environment must be reset before calling step().")
             
-        from server.grader import evaluate_action
+        # Grading logic
         
         # Find ground truth for benchmarking if applicable
         ground_truth = "Inconclusive"
