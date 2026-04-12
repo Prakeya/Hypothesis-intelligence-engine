@@ -152,12 +152,16 @@ header, footer, [data-testid="stHeader"] {visibility: hidden;}
 
 /* Annihilate Streamlit's Native React Unmount Lag & Fade Ghosting */
 * {
-    animation-duration: 0.001s !important; 
-    transition-duration: 0.001s !important;
+    animation-duration: 0.0s !important; 
+    transition-duration: 0.0s !important;
 }
 [data-testid="stAppViewContainer"] * {
     transition-delay: 0s !important;
     animation-delay: 0s !important;
+}
+/* Force immediate display removal for blocks that are hiding */
+[data-testid="stVerticalBlock"] > div:empty {
+    display: none !important;
 }
 /* Whitelist our custom premium UI hover states WITHOUT triggering opacity fades */
 .protocol-card {
@@ -288,6 +292,7 @@ def show_analysis_dialog():
 
 # --- VIEW CONTAINERS TO PREVENT GHOSTING ---
 home_placeholder = st.empty()
+protocol_placeholder = st.empty()
 
 if not st.session_state.entered:
     with home_placeholder.container():
@@ -304,29 +309,32 @@ else:
     home_placeholder.empty()
     
     if st.session_state.mode:
+        # If in a mode, immediately destroy the protocol selection UI
+        protocol_placeholder.empty()
         st.button("← Change Protocol", on_click=go_back_cb)
     else:
         st.button("← Power Off", on_click=reset_system)
 
     # 1. Protocol Selection
     if not st.session_state.mode:
-        st.markdown("<div class='chapter-title' style='text-align:center; margin-top:2rem;'>Protocol Selection</div>", unsafe_allow_html=True)
-        st.markdown("<div class='chapter-subtitle' style='text-align:center; color:#AAA; margin-bottom: 2rem;'>Select an operating configuration below to calibrate the engine limits.</div>", unsafe_allow_html=True)
-        
-        col_bench, col_cust = st.columns(2)
-        with col_bench:
-            bg = "linear-gradient(145deg, #18181A 0%, #121214 100%)"
-            accent = "<div style='width: 30px; height: 3px; background: #FFFFFF; margin: 0 auto 1.5rem auto;'></div>"
+        with protocol_placeholder.container():
+            st.markdown("<div class='chapter-title' style='text-align:center; margin-top:2rem;'>Protocol Selection</div>", unsafe_allow_html=True)
+            st.markdown("<div class='chapter-subtitle' style='text-align:center; color:#AAA; margin-bottom: 2rem;'>Select an operating configuration below to calibrate the engine limits.</div>", unsafe_allow_html=True)
             
-            st.markdown(f"<div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'><div style='font-size:0.6rem; letter-spacing:2px; color:#666; font-weight:800; margin-bottom:1rem;'>MODE [01]</div>{accent}<h3 style='font-size:1.8rem; font-weight:600;'>Benchmark Runtime</h3><p style='font-size:0.85rem; color:#888; font-weight:300;'>Engage pre-calibrated evaluation tasks. Validate inferential accuracy against closed-system structural mathematics.</p></div>", unsafe_allow_html=True)
-            st.button("Initialize Benchmark Stack", use_container_width=True, type="secondary", on_click=select_bench_cb)
+            col_bench, col_cust = st.columns(2)
+            with col_bench:
+                bg = "linear-gradient(145deg, #18181A 0%, #121214 100%)"
+                accent = "<div style='width: 30px; height: 3px; background: #FFFFFF; margin: 0 auto 1.5rem auto;'></div>"
                 
-        with col_cust:
-            bg = "linear-gradient(145deg, #18181A 0%, #121214 100%)"
-            accent = "<div style='width: 30px; height: 3px; background: #888888; margin: 0 auto 1.5rem auto;'></div>"
-            
-            st.markdown(f"<div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'><div style='font-size:0.6rem; letter-spacing:2px; color:#666; font-weight:800; margin-bottom:1rem;'>MODE [02]</div>{accent}<h3 style='font-size:1.8rem; font-weight:400;'>Custom Injector</h3><p style='font-size:0.85rem; color:#888; font-weight:300;'>Inject custom matrices directly into the inference core. Probe limits and perform open-ended logical bounding.</p></div>", unsafe_allow_html=True)
-            st.button("Initialize Custom Injector", use_container_width=True, type="secondary", on_click=select_cust_cb)
+                st.markdown(f"<div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'><div style='font-size:0.6rem; letter-spacing:2px; color:#666; font-weight:800; margin-bottom:1rem;'>MODE [01]</div>{accent}<h3 style='font-size:1.8rem; font-weight:600;'>Benchmark Runtime</h3><p style='font-size:0.85rem; color:#888; font-weight:300;'>Engage pre-calibrated evaluation tasks. Validate inferential accuracy against closed-system structural mathematics.</p></div>", unsafe_allow_html=True)
+                st.button("Initialize Benchmark Stack", use_container_width=True, type="secondary", on_click=select_bench_cb)
+                    
+            with col_cust:
+                bg = "linear-gradient(145deg, #18181A 0%, #121214 100%)"
+                accent = "<div style='width: 30px; height: 3px; background: #888888; margin: 0 auto 1.5rem auto;'></div>"
+                
+                st.markdown(f"<div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'><div style='font-size:0.6rem; letter-spacing:2px; color:#666; font-weight:800; margin-bottom:1rem;'>MODE [02]</div>{accent}<h3 style='font-size:1.8rem; font-weight:400;'>Custom Injector</h3><p style='font-size:0.85rem; color:#888; font-weight:300;'>Inject custom matrices directly into the inference core. Probe limits and perform open-ended logical bounding.</p></div>", unsafe_allow_html=True)
+                st.button("Initialize Custom Injector", use_container_width=True, type="secondary", on_click=select_cust_cb)
 
     # 2. Engine Selection & Preview
     elif st.session_state.mode == "benchmark":
