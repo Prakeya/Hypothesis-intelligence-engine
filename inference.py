@@ -1,11 +1,17 @@
-import os
 import json
-from typing import List, Dict, Any, Optional
+import os
+from typing import Any, Dict, List, Optional
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from openai import OpenAI
 
 app = FastAPI(title="Hypothesis Intelligence Engine - Inference API")
+
+DEFAULT_API_BASE_URL = os.getenv("API_BASE_URL") or os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
+DEFAULT_API_KEY = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY") or "no-key"
+DEFAULT_MODEL_NAME = os.getenv("MODEL_NAME") or "gpt-3.5-turbo"
+HAS_REAL_API_KEY = DEFAULT_API_KEY not in {"", "no-key"}
 
 class PredictRequest(BaseModel):
     claim: str
@@ -14,8 +20,72 @@ class PredictRequest(BaseModel):
 from env import HypothesisEnv, Action
 env_instance = HypothesisEnv()
 
+
+def _safe_model_dump(model: Any) -> Dict[str, Any]:
+    if hasattr(model, "model_dump"):
+        return model.model_dump()
+    if hasattr(model, "dict"):
+        return model.dict()
+    return dict(model)
+
+
+def _create_client() -> OpenAI:
+    return OpenAI(api_key=DEFAULT_API_KEY, base_url=DEFAULT_API_BASE_URL)
+
+
+def _has_real_api_credentials() -> bool:
+    return HAS_REAL_API_KEY and bool(DEFAULT_API_BASE_URL)
+
+
+def _fallback_action_data(reason: str = "Fallback") -> Dict[str, Any]:
+    return {
+        "verdict": "Inconclusive",
+        "reasoning": reason,
+        "confidence_score": 0.5,
+    }
+
+
+def _normalize_action_data(action_data: Any) -> Dict[str, Any]:
+    if not isinstance(action_data, dict):
+        return _fallback_action_data("Model returned a non-object payload")
+
+    verdict = action_data.get("verdict", "Inconclusive")
+    if verdict not in {"Supported", "Refuted", "Inconclusive"}:
+        verdict = "Inconclusive"
+
+    reasoning = action_data.get("reasoning") or action_data.get("conclusion") or "Fallback"
+
+    confidence_source = action_data.get("confidence_score", action_data.get("confidence", 0.5))
+    try:
+        confidence = float(confidence_source)
+    except Exception:
+        confidence = 0.5
+    confidence = min(max(confidence, 0.01), 0.94)
+
+    return {
+        "verdict": verdict,
+        "reasoning": reasoning,
+        "confidence_score": confidence,
+    }
+
+
+def _build_action(action_data: Any) -> Action:
+    normalized = _normalize_action_data(action_data)
+    try:
+        return Action(**normalized)
+    except Exception:
+        return Action(
+            verdict="Inconclusive",
+            reasoning="Fallback",
+            confidence=0.5,
+            hallucination_check={},
+        )
+
 # --- Core Existing Logic ---
 def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last_reward: float, prev_reasoning: str = ""):
+    if not _has_real_api_credentials():
+        return json.dumps(_fallback_action_data("Missing API credentials"))
+
     prompt = f"""
     Step {step} | Last Reward: {last_reward}
     Audit Target: {claim}
@@ -43,7 +113,7 @@ def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last
     """
     try:
         response = client.chat.completions.create(
-            model=os.environ.get("MODEL_NAME", "gpt-3.5-turbo"),
+            model=DEFAULT_MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
             temperature=0.0,
@@ -52,15 +122,7 @@ def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last
         return response.choices[0].message.content
     except Exception as e:
         print(f"[DEBUG] Model request failed: {e}")
-        return json.dumps({
-            "hypothesis": "Fallback",
-            "method": "Error handling",
-            "reasoning_steps": "Model call failed",
-            "conclusion": "Handled safely",
-            "confidence_score": 0.5,
-            "verdict": "Inconclusive",
-            "reasoning": "Fallback reasoning"
-        })
+        return json.dumps(_fallback_action_data("Model call failed"))
 
 @app.get("/")
 def read_root(): return {"status": "running"}
@@ -68,39 +130,37 @@ def read_root(): return {"status": "running"}
 @app.post("/reset")
 def reset_env():
     try:
-        return env_instance.reset().dict()
+        return _safe_model_dump(env_instance.reset())
     except Exception as e:
         return {"error": str(e)}
 
 @app.post("/step")
 def step_env(action: Action):
     try:
-        return env_instance.step(action).dict()
+        return _safe_model_dump(env_instance.step(action))
     except Exception as e:
         return {"error": str(e)}
 
 @app.post("/predict")
 def predict(req: PredictRequest):
     try:
-        client = OpenAI(api_key=os.environ["API_KEY"], base_url=os.environ["API_BASE_URL"])
+        client = _create_client()
         raw_action = get_model_message(client, 1, req.claim, req.dataset, 0.0, "")
-        action_data = json.loads(raw_action)
+        try:
+            action_data = json.loads(raw_action)
+        except Exception:
+            action_data = _fallback_action_data("Model parsing failed")
     except Exception as e:
         print(f"[DEBUG] Validation failed: {e}")
-        action_data = {"verdict": "Inconclusive", "reasoning": "Fallback", "confidence_score": 0.5}
-    return {"success": True, "score": 0.8, "result": action_data}
+        action_data = _fallback_action_data("Validation failed")
+    return {"success": True, "score": 0.8, "result": _normalize_action_data(action_data)}
 
 # --- Automated CLI Evaluator (For Phase 2 Grader) ---
 async def main():
-    import json
-    
     print("[START] task=demo", flush=True)
     
     try:
-        client = OpenAI(
-            api_key=os.environ["API_KEY"],
-            base_url=os.environ["API_BASE_URL"]
-        )
+        client = _create_client()
         
         try:
             seen_tasks = set()
@@ -131,36 +191,15 @@ async def main():
                     try:
                         action_data = json.loads(raw_action)
                     except Exception:
-                        action_data = {
-                            "verdict": "Inconclusive",
-                            "reasoning": "Model parsing failed",
-                            "confidence_score": 0.5
-                        }
+                        action_data = _fallback_action_data("Model parsing failed")
                     
-                    prev_reasoning = action_data.get("reasoning", "")
+                    normalized_action_data = _normalize_action_data(action_data)
+                    prev_reasoning = normalized_action_data.get("reasoning", "")
                     
-                    try:
-                        conf = float(action_data.get("confidence_score", 0.5))
-                    except Exception:
-                        conf = 0.5
+                    conf = float(normalized_action_data.get("confidence_score", 0.5))
                     task_confidences.append(conf)
                     
-                    # Safely map to the correct Action schema
-                    try:
-                        action = Action(
-                            verdict=action_data.get("verdict", "Inconclusive"),
-                            reasoning=action_data.get("reasoning", "Fallback"),
-                            confidence=conf,
-                            hallucination_check={}
-                        )
-                    except Exception:
-                        # Fallback for old schema
-                        action = Action(
-                            hypothesis=action_data.get("verdict", "Fallback"),
-                            method="Method",
-                            reasoning_steps=action_data.get("reasoning", "Steps"),
-                            conclusion="Conclusion"
-                        )
+                    action = _build_action(normalized_action_data)
                     
                     reward_obj = env_instance.step(action)
                     last_reward = getattr(reward_obj, "reward", 0.5)
