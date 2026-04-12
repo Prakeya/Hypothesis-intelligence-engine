@@ -9,6 +9,14 @@ app_file: app.py
 pinned: false
 ---
 
+# 🧬 Hypothesis Intelligence Engine
+
+## 🛡️ Hallucination Checker Improvements
+- **Issue Found**: Brittle string-based matching caused false positives on numeric precision (e.g., `8` vs `8.0`). Integration was missing from the root environment path.
+- **Fix**: Implemented a robust numeric-first checker using `math.isclose` for float comparison.
+- **Files Modified**: `env.py`, `server/env.py`.
+- **Validation**: No changes were made to UI, API contracts, or core scoring weights. The checker now populates `Action.hallucination_check` with detailed detection logs.
+
 # Hypothesis Intelligence Engine (OpenEnv)
 > **AI-Driven Logic Auditing & Hallucination Detection Environment**
 

@@ -1,6 +1,7 @@
 import random
 import uuid
 import math
+import re
 from typing import List, Dict, Optional, Any, Literal
 from pydantic import BaseModel, Field, validator
 
@@ -29,6 +30,46 @@ def safe_strict_float(value: Any, default: float = 0.5) -> float:
     if x >= 1.0:
         return 1.0 - EPS
     return x
+
+
+def check_hallucination(reasoning: str, evidence: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Robust numeric-first hallucination checker.
+    """
+    # 1. Extract all floats from reasoning
+    # Ignore correlation markers and score literals which are known system outputs
+    clean_text = re.sub(r"(Estimated Correlation|Confidence Score|r=|Reward|Score)[:\s]*[-+]?\d*\.?\d+", "", reasoning, flags=re.I)
+    found_numbers = re.findall(r"[-+]?\d*\.?\d+", clean_text)
+    
+    found_floats = []
+    for n in found_numbers:
+        try:
+            found_floats.append(float(n))
+        except ValueError:
+            continue
+
+    # 2. Extract all numeric values from evidence
+    evidence_values = set()
+    for row in evidence:
+        for val in row.values():
+            try:
+                evidence_values.add(float(val))
+            except (ValueError, TypeError):
+                continue
+
+    # 3. Define common logic constants to ignore (whitelist)
+    whitelist = {0.0, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 8.0, 10.0, 15.0, 100.0}
+    
+    hallucinated_values = []
+    for f in found_floats:
+        if f not in evidence_values and f not in whitelist:
+            # Check for close precision matches (e.g. 75.0 vs 75)
+            if not any(math.isclose(f, ev, rel_tol=1e-5) for ev in evidence_values):
+                hallucinated_values.append(f)
+
+    if hallucinated_values:
+        return {"status": "failed", "detected": True, "values": list(set(hallucinated_values))}
+    return {"status": "passed", "detected": False, "values": []}
 
 
 # -----------------------------
@@ -130,6 +171,9 @@ def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=N
 
     raw_reward = safe_strict_float(raw_reward, default=0.5)
 
+    # Hallucination Check - Integrated without changing score weights
+    h_check = check_hallucination(action.get("reasoning", ""), evidence)
+
     final_reward = (raw_reward * 0.8) + (confidence * 0.1) + 0.05
     final_reward = safe_strict_float(final_reward, default=0.5)
 
@@ -139,11 +183,13 @@ def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=N
     print("[REWARD_TRACE] y_vals:", y_vals)
     print("[REWARD_TRACE] raw_reward:", raw_reward)
     print("[REWARD_TRACE] final_reward:", final_reward)
+    print("[REWARD_TRACE] hallucination:", h_check["status"])
     if pathology:
         print("[REWARD_TRACE] pathology:", pathology)
 
     return {
         "reward": final_reward,
+        "hallucination_check": h_check,
         "info": {
             "grader": "strictly_between_0_and_1",
             "raw_reward_before_blend": raw_reward,
@@ -151,7 +197,8 @@ def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=N
             "dependent_var": dep_var,
             "y_vals": y_vals,
             "pathology": pathology,
-            "ground_truth": ground_truth
+            "ground_truth": ground_truth,
+            "hallucination": h_check
         }
     }
 
@@ -255,6 +302,14 @@ class HypothesisEnv:
                 ground_truth = gt_task.get("ground_truth_verdict")
 
         eval_res = evaluate_action(action.model_dump(), task, ground_truth=ground_truth)
+
+        # Update the action model with the hallucination check result if needed
+        if "hallucination_check" in eval_res:
+            res_dict = eval_res["hallucination_check"]
+            action.hallucination_check = {
+                "status": res_dict["status"],
+                "notes": f"Detected values: {res_dict['values']}" if res_dict["detected"] else "No hallucinations found"
+            }
 
         reward_value = safe_strict_float(eval_res["reward"], default=0.5)
 
