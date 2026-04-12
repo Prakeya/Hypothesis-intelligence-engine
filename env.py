@@ -5,14 +5,13 @@ import re
 from typing import List, Dict, Optional, Any, Literal
 from pydantic import BaseModel, Field, validator
 
-# 🧬 Hypothesis Intelligence Engine - Gold Standard Baseline
-# 12-Task Benchmark Suite | Phase 2 Compliant
-# Unified Logic Core (Isomorphic)
+# 🧬 Hypothesis Intelligence Engine - Gold Standard (Final)
+# Winner-Level Suite | Phase 2 Compliant | Zero-Trust Logic
 
 EPS = 1e-6
 
 # -----------------------------
-# 🛠️ Core Utilities
+# 🛠️ High-Fidelity Utilities
 # -----------------------------
 
 def safe_strict_float(value: Any, default: float = 0.5) -> float:
@@ -94,7 +93,7 @@ class State(BaseModel):
     history: List[Action] = Field(default_factory=list)
 
 # -----------------------------
-# ⚖️ Unified Grader Logic (Zero-Trust)
+# ⚖️ Unified Grader Logic
 # -----------------------------
 
 def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=None) -> Dict[str, Any]:
@@ -130,18 +129,16 @@ def evaluate_action(action: Dict[str, Any], task: Dict[str, Any], ground_truth=N
 class HypothesisEnv:
     def __init__(self):
         self.tasks = [
-            {"id": "study-marks", "domain": "Education", "claim": "Increased study hours lead to higher academic scores.", "dataset": [{"hours": 2, "marks": 60}, {"hours": 8, "marks": 95}], "independent_var": "hours", "dependent_var": "marks", "ground_truth_verdict": "Supported"},
-            {"id": "stress-sleep", "domain": "Health", "claim": "Optimal sleep patterns are inversely correlated with cortisol levels.", "dataset": [{"sleep": 4, "cortisol": 80}, {"sleep": 9, "cortisol": 20}], "independent_var": "sleep", "dependent_var": "cortisol", "ground_truth_verdict": "Refuted"},
-            {"id": "caffeine-focus", "domain": "Neuro", "claim": "Caffeine consumption exhibits a non-linear effect on task focus.", "dataset": [{"mg": 0, "focus": 50}, {"mg": 200, "focus": 90}, {"mg": 600, "focus": 30}], "independent_var": "mg", "dependent_var": "focus", "ground_truth_verdict": "Inconclusive"},
-            {"id": "ads-conv", "domain": "Marketing", "claim": "Digital advertising conversions follow a diminishing returns curve.", "dataset": [{"spend": 100, "conv": 10}, {"spend": 1000, "conv": 50}, {"spend": 5000, "conv": 55}], "independent_var": "spend", "dependent_var": "conv", "ground_truth_verdict": "Supported"},
-            {"id": "age-reaction", "domain": "Biology", "claim": "Cognitive processing speed decreases as a function of age.", "dataset": [{"age": 20, "ms": 200}, {"age": 60, "ms": 450}], "independent_var": "age", "dependent_var": "ms", "ground_truth_verdict": "Supported"},
-            {"id": "exercise-heart", "domain": "Health", "claim": "Regular cardiovascular activity correlates with reduced RHR.", "dataset": [{"gym_min": 0, "rhr": 75}, {"gym_min": 60, "rhr": 62}], "independent_var": "gym_min", "dependent_var": "rhr", "ground_truth_verdict": "Refuted"},
-            {"id": "edu-income", "domain": "Econ", "claim": "Academic attainment levels are positively predictive of earnings.", "dataset": [{"yrs": 12, "pay": 30000}, {"yrs": 20, "pay": 120000}], "independent_var": "yrs", "dependent_var": "pay", "ground_truth_verdict": "Supported"},
-            {"id": "urban-temp", "domain": "Env", "claim": "Increased urban density is a significant driver of heat islands.", "dataset": [{"pop": 1000, "c": 22}, {"pop": 1000000, "c": 28}], "independent_var": "pop", "dependent_var": "c", "ground_truth_verdict": "Supported"},
-            {"id": "social-happy", "domain": "Psych", "claim": "Social media saturation levels correlate with happiness indices.", "dataset": [{"hr": 1, "happy": 8}, {"hr": 8, "happy": 3}], "independent_var": "hr", "dependent_var": "happy", "ground_truth_verdict": "Refuted"},
-            {"id": "price-demand", "domain": "Business", "claim": "Consumer demand for luxury goods remains inelastic across price shifts.", "dataset": [{"usd": 500, "units": 100}, {"usd": 1500, "units": 95}, {"usd": 5000, "units": 98}], "independent_var": "usd", "dependent_var": "units", "ground_truth_verdict": "Inconclusive"},
-            {"id": "rain-yield", "domain": "Agri", "claim": "Increased rainfall leads to non-monotonic crop yield volatility.", "dataset": [{"mm": 100, "kg": 500}, {"mm": 500, "kg": 1200}, {"mm": 1000, "kg": 700}], "independent_var": "mm", "dependent_var": "kg", "ground_truth_verdict": "Inconclusive"},
-            {"id": "fuel-dist", "domain": "Physics", "claim": "Aerodynamic drag increases exponentially with terrestrial velocity.", "dataset": [{"kph": 50, "liters": 5}, {"kph": 120, "liters": 14}], "independent_var": "kph", "dependent_var": "liters", "ground_truth_verdict": "Supported"}
+            {"id": "Health", "domain": "Health", "mode": "benchmark", "claim": "Coffee consumption reduces sleep duration.", "dataset": [{"cups": 1, "sleep": 8}, {"cups": 2, "sleep": 7.5}, {"cups": 4, "sleep": 5}, {"cups": 6, "sleep": 3}], "independent_var": "cups", "dependent_var": "sleep", "ground_truth_verdict": "Supported", "grader": evaluate_action},
+            {"id": "Retail", "domain": "Retail", "mode": "benchmark", "claim": "Higher temperatures decrease umbrella sales.", "dataset": [{"temp": 15, "sales": 50}, {"temp": 25, "sales": 20}, {"temp": 35, "sales": 5}], "independent_var": "temp", "dependent_var": "sales", "ground_truth_verdict": "Supported", "grader": evaluate_action},
+            {"id": "Nutrition", "domain": "Nutrition", "mode": "benchmark", "claim": "Eating more sugar leads to weight loss.", "dataset": [{"sugar": 20, "weight": 70}, {"sugar": 50, "weight": 75}, {"sugar": 100, "weight": 82}], "independent_var": "sugar", "dependent_var": "weight", "ground_truth_verdict": "Refuted", "grader": evaluate_action},
+            {"id": "Finance", "domain": "Finance", "mode": "benchmark", "claim": "Higher interest rates reduce loan applications.", "dataset": [{"rate": 1, "apps": 1000}, {"rate": 5, "apps": 700}, {"rate": 10, "apps": 350}], "independent_var": "rate", "dependent_var": "apps", "ground_truth_verdict": "Supported", "grader": evaluate_action},
+            {"id": "Marketing", "domain": "Marketing", "mode": "benchmark", "claim": "Increased ad spend results in lower total revenue.", "dataset": [{"spend": 100, "revenue": 5000}, {"spend": 1000, "revenue": 15000}, {"spend": 5000, "revenue": 25000}], "independent_var": "spend", "dependent_var": "revenue", "ground_truth_verdict": "Refuted", "grader": evaluate_action},
+            {"id": "Psychology", "domain": "Psychology", "mode": "benchmark", "claim": "Daily meditation improves memory recall.", "dataset": [{"min": 5, "recall": 80}, {"min": 15, "recall": 85}, {"min": 30, "recall": 92}], "independent_var": "min", "dependent_var": "recall", "ground_truth_verdict": "Supported", "grader": evaluate_action},
+            {"id": "Physics", "domain": "Physics", "mode": "benchmark", "claim": "Higher altitude leads to lower air pressure.", "dataset": [{"alt": 0, "pressure": 1013}, {"alt": 1000, "pressure": 898}, {"alt": 2000, "pressure": 795}], "independent_var": "alt", "dependent_var": "pressure", "ground_truth_verdict": "Supported", "grader": evaluate_action},
+            {"id": "Linguistics", "domain": "Linguistics", "mode": "benchmark", "claim": "More reading reduces vocabulary.", "dataset": [{"books": 1, "vocab": 5000}, {"books": 10, "vocab": 7500}, {"books": 50, "vocab": 12000}], "independent_var": "books", "dependent_var": "vocab", "ground_truth_verdict": "Refuted", "grader": evaluate_action},
+            {"id": "Education", "domain": "Education", "mode": "benchmark", "claim": "Increased study hours lead to higher academic scores.", "dataset": [{"hours": 2, "marks": 60}, {"hours": 5, "marks": 85}, {"hours": 8, "marks": 70}, {"hours": 10, "marks": 95}], "independent_var": "hours", "dependent_var": "marks", "ground_truth_verdict": "Inconclusive", "grader": evaluate_action},
+            {"id": "Sports", "domain": "Sports", "mode": "benchmark", "claim": "More training always improves running speed.", "dataset": [{"training_sessions": 1, "speed": 10.4}, {"training_sessions": 2, "speed": 9.9}, {"training_sessions": 4, "speed": 10.6}, {"training_sessions": 5, "speed": 10.1}], "independent_var": "training_sessions", "dependent_var": "speed", "ground_truth_verdict": "Inconclusive", "grader": evaluate_action}
         ]
         self.benchmark_tasks = self.tasks
         self._current_state: Optional[State] = None
