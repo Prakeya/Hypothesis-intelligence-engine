@@ -348,7 +348,7 @@ else:
             with cols[i % 3]:
                 domain = t.get("domain", "General")
                 badge_html = f"<span style='background:rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; color: #FFF; font-weight: 600; text-transform: uppercase;'>{domain}</span>"
-                st.markdown(f"<div class='engine-card' style='display: flex; flex-direction: column; justify-content: space-between;'><div style='margin-bottom: 1rem;'>{badge_html}</div><h4 style='color:#FFF; font-size:1.1rem; line-height:1.4; margin-bottom: 1rem;'>\"{t['claim']}\"</h4></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='engine-card' style='display: flex; flex-direction: column; justify-content: space-between;'><div style='margin-bottom: 1rem;'>{badge_html}</div><div style='color:#EAEAEA; font-size:1.05rem; line-height:1.5; font-weight: 500; margin-bottom: 1rem;'>{t['claim']}</div></div>", unsafe_allow_html=True)
                 if st.button("EXECUTE AUDIT", key=f"btn_{t['id']}", use_container_width=True):
                     # Load the environment and auto-execute the agent
                     st.session_state.current_obs = Observation(
