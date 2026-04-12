@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hypothesis-intelligence-engine"
+version = "1.0.3"
+description = "AI logic auditing and hallucination detection system."
+authors = [
+    { name = "Shakt", email = "research@example.com" }
+]
+dependencies = [
+    "openenv-core>=0.2.3",
+    "pydantic>=2.0.0",
+    "openai>=1.0.0",
+    "streamlit>=1.30.0",
+    "numpy>=1.24.0",
+    "python-dotenv>=1.0.0",
+    "uvicorn>=0.22.0",
+    "fastapi>=0.100.0"
+]
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+include = ["server*"]
+
+[project.scripts]
+server = "server.app:main"
+
+[project.urls]
+Homepage = "https://huggingface.co/spaces/shakt/hypothesis-intelligence"

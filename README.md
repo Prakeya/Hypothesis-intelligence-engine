@@ -17,23 +17,25 @@ pinned: false
 Modern LLMs excel at generating claims but frequently struggle with **grounding** those claims in empirical data. The Hypothesis Intelligence Engine provides a rigorous OpenEnv-compliant simulation where agents must audit data artifacts, generate verifiable hypotheses, and synthesize conclusions without fabricating evidence (Hallucination).
 
 ## Key Features
+- **Multi-Step Reasoning Agent**: An upgraded inference pipeline utilizing iterative self-correction loops. The agent receives reward feedback from the environment and explicitly refines its reasoning over multiple steps.
+- **Strict Phase 2 OpenEnv Compliance**: Full implementation of standardized `[START]`, `[STEP]`, and `[END]` event logging required by stringent Deep Validator pipelines.
+- **Fail-Safe Pydantic Guardrails**: Safe isolation of agent execution using dual-layered try/except blocks and advanced Pydantic attribute resolution mapped correctly across varying legacy/new observation schemas.
 - **Logic Auditing Protocol**: Agents follow structured logic parsing (Monotonic Trends, Causal Filtering, Strict Absolute Statements formatting).
-- **Hallucination Detection Guard**: Programmatic reasoning parsing that aggressively traps numerical fabrication or extra-empirical assumptions.
+- **Hallucination Detection Guard**: Programmatic mathematical parsing that aggressively penalizes numerical fabrication and bounds the final score between 10% and 90%.
 - **FastAPI Backend Structure**: Application is built fully as a scalable Docker-deployed JSON API listening on Port 7860.
-- **Benchmark Suite**: Native evaluator checking standard edge-cases for >95% accuracy targets.
 
 ## OpenEnv Specifications
 
 ### Observation Space
-- `task_id`: Unique identifier for the audit task.
+- `task_id`: Unique identifier for the audit task explicitly detected to match OpenEnv validators.
 - `claim`: The hypothesis statement under evaluation.
-- `dataset`: The raw data artifacts provided for analysis.
+- `evidence_block`: The raw data artifacts provided for analysis.
 
 ### Action / Output Space
 The internal evaluation outputs cleanly mapping to logic triggers:
 - `verdict`: "Supported", "Refuted", or "Inconclusive".
 - `reasoning`: The step-by-step logic chain mapped specifically against variables.
-- `confidence_score`: Evaluated metric mapping.
+- `confidence_score`: Evaluated metric mappings dynamically factoring into a 70/30 weighted reward equation.
 
 ## Setup & Deployment
 
