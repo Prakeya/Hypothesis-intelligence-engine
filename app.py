@@ -1,12 +1,11 @@
-import os
 import sys
-import subprocess
 from pathlib import Path
 
-def main():
-    """ shim to run the refactored server package """
-    app_path = Path(__file__).parent / "server" / "app.py"
-    subprocess.run([sys.executable, "-m", "streamlit", "run", str(app_path), "--server.port=8501", "--server.address=0.0.0.0"])
+# Fix path to allow imports from server package
+sys.path.append(str(Path(__file__).parent))
 
-if __name__ == "__main__":
-    main()
+# Execute the main dashboard
+app_path = Path(__file__).parent / "server" / "app.py"
+with open(app_path, "r", encoding="utf-8") as f:
+    code = f.read()
+    exec(code, globals())
