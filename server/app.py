@@ -241,10 +241,16 @@ def show_analysis_dialog():
     status_text = "System Initialized"
     status_color = "#FFFFFF"
     
-    if out['verdict'] == "Inconclusive":
-        status_text = "⚖️ SIGNAL AMBIGUITY"
+    trend = eval_data.get('info', {}).get('trend', 'neutral')
+    
+    if trend == "mixed":
+        status_text = "⚖️ MIXED EVIDENCE PATTERN"
         status_color = "#fbbf24" # amber-400
-        subtext = "Evidence exhibits non-monotonic traits preventing definitive logic grounding."
+        subtext = "Dataset exhibits high directional volatility preventing a clean logic grounding."
+    elif trend == "neutral":
+        status_text = "🔍 WEAK SIGNAL"
+        status_color = "#a78bfa" # violet-400
+        subtext = "Insufficient gradient variance to establish a definitive logic grounding."
     elif reward >= 0.85:
         status_text = "🏆 OPTIMAL LOGIC GROUNDING"
         status_color = "#4ade80"
@@ -258,9 +264,9 @@ def show_analysis_dialog():
         status_color = "#ef4444"
         subtext = "Analytical evidence behaves in direct opposition to the hypothesis."
     else:
-        status_text = "🔍 PARTIAL CORRELATION"
-        status_color = "#a78bfa"
-        subtext = "Weak or non-linear correlation observed within the current scope."
+        status_text = "📈 CORRELATION OBSERVED"
+        status_color = "#38bdf8" # sky-400
+        subtext = "Stable directional trend observed with moderate logical alignment."
 
     st.markdown(f"""
     <div class='glass-panel' style='display: flex; justify-content: space-between; align-items: center; border-left: 4px solid {status_color}; background: linear-gradient(90deg, {status_color}0A 0%, rgba(28,28,30,1) 100%);'>
@@ -284,11 +290,11 @@ def show_analysis_dialog():
     dep = obs.dependent_var
     v_color = "val-supported" if out['verdict'] == "Supported" else ("val-refuted" if out['verdict'] == "Refuted" else "val-inconclusive")
     
-    trend_cls = "trend-inc" if trend == "Increasing" else ("trend-dec" if trend == "Decreasing" else "trend-mixed")
-    if trend == "Increasing": trend_desc = "Clear upward correlation"
-    elif trend == "Decreasing": trend_desc = "Consistent inverse relationship"
-    elif trend == "Mixed": trend_desc = "Volatile/mixed signal"
-    else: trend_desc = "Flat dataset signal"
+    trend_cls = "trend-inc" if trend == "positive" else ("trend-dec" if trend == "negative" else "trend-mixed")
+    if trend == "positive": trend_desc = "Robust upward correlation"
+    elif trend == "negative": trend_desc = "Robust downward correlation"
+    elif trend == "mixed": trend_desc = "Volatile signal (Inconsistent)"
+    else: trend_desc = "Weak signal (Insufficient delta)"
 
     sum_html = f"""
     <div class='glass-panel' style='padding: 2rem;'>

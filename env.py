@@ -33,12 +33,20 @@ def extract_numeric_values(data: List[Dict[str, Any]], key: str) -> List[float]:
     return values
 
 def detect_trend(values: List[float]) -> str:
-    if len(values) < 2: return "Insufficient"
-    is_inc = all(x < y for x, y in zip(values, values[1:]))
-    is_dec = all(x > y for x, y in zip(values, values[1:]))
-    if is_inc: return "Increasing"
-    if is_dec: return "Decreasing"
-    return "Mixed"
+    if not values or len(values) < 2: return "neutral"
+    positive = 0
+    negative = 0
+    for i in range(1, len(values)):
+        diff = values[i] - values[i-1]
+        if diff > 0: positive += 1
+        elif diff < 0: negative += 1
+    total = positive + negative
+    if total == 0: return "neutral"
+    pos_ratio = positive / total
+    neg_ratio = negative / total
+    if pos_ratio >= 0.7: return "positive"
+    if neg_ratio >= 0.7: return "negative"
+    return "mixed"
 
 def check_hallucination(reasoning: str, evidence: List[Dict[str, Any]]) -> Dict[str, Any]:
     clean_text = re.sub(r"(Estimated Correlation|Confidence Score|r=|Reward|Score)[:\s]*[-+]?\d*\.?\d+", "", reasoning, flags=re.I)
