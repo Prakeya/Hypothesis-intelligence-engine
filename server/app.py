@@ -278,9 +278,11 @@ def show_analysis_dialog():
 
     col1, col2, col3 = st.columns(3)
     with col1:
-         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>FINAL REWARD</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{eval_data['reward']}</div></div>", unsafe_allow_html=True)
+         # Use 1 decimal place for Final Reward
+         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>FINAL REWARD</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{eval_data['reward']:.1f}</div></div>", unsafe_allow_html=True)
     with col2:
-         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE SCORE</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{out['confidence']:.2f}</div></div>", unsafe_allow_html=True)
+         # Use 1 decimal place for Confidence
+         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE SCORE</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{out['confidence']:.1f}</div></div>", unsafe_allow_html=True)
     with col3:
          st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>STATUS</div><div style='font-size:1.5rem; font-family:Outfit,sans-serif; font-weight:600; color:#EAEAEA; display:flex; align-items:center; justify-content:center; height:3rem;'>{info_data.get('info', 'Ok')}</div></div>", unsafe_allow_html=True)
 
