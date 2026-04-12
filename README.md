@@ -28,13 +28,12 @@ Our submission implements a **Zero-Trust Strategy** for reasoning validation, en
 - **12-Domain Benchmark Suite**: Covers Education, Health, Neuro, Physics, and more, with diverse trend patterns (Increasing, Decreasing, Mixed, Plateau).
 - **Isomorphic Consistency**: Guaranteed 1:1 logic parity between local development and the production server.
 - **Double-Guard Numeric Stability**: Every reward and confidence score passes through a strict `(0, 1)` open-interval clamp, trapping `NaN` and `Inf` leaks at the source.
-- **Diagnostic Signal Reconciliation**: Detects **Data–Hypothesis Misalignment** using monotonic gradient checks to identify conflicts between evidence and claims.
 - **Precision Reconciliation**: Hallucination detection uses `math.isclose` with high-precision relative tolerances.
 
 ## 🛠️ Technical Features
 - **Pydantic V2 Integrity**: Strict schema enforcement at the API boundary ensures that all payloads are validated before reaching the environment core.
 - **Streamlit Premium Dashboard**: A linear, immersive analytical UI that builds trust through transparency and high-fidelity logical traces.
-- **Diagnostic-First Auditing**: A comprehensive `info` object provides a peek into the engine's "internal audit," including trend detection and hallucination logs.
+- **Verification Auditing**: A comprehensive `info` object provides a peek into the engine's "internal audit," including trend detection and hallucination logs.
 
 ## 🚀 Performance & Compliance
 - **Compliance**: Fully compliant with the **OpenEnv** Phase 2 deep-validation protocol.
