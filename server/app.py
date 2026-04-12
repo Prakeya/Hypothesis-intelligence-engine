@@ -218,10 +218,78 @@ def show_analysis_dialog():
     st.markdown("<div class='chapter-tag'>Active Claim Under Test</div>", unsafe_allow_html=True)
     st.markdown(f"<div style='font-size: 1.5rem; font-style: italic; color: #fff; margin-bottom: 2rem;'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
 
-    st.markdown("<div id='logic-anchor' class='chapter-tag'>Robust Explanation & Verdict</div>", unsafe_allow_html=True)
+    st.markdown("<div id='logic-anchor' class='chapter-tag'>Audit Conclusion & Status</div>", unsafe_allow_html=True)
     
-    color = "#FFFFFF"
-    st.markdown(f"<div class='glass-panel'><div style='font-size: 0.8rem; font-weight: 800; color: #888; text-transform: uppercase;'>FINAL VERDICT</div><div style='font-size: 3rem; font-family: Lora, serif; color: {color}; margin-top: 0.5rem;'>{out['verdict']}</div></div>", unsafe_allow_html=True)
+    # --- DYNAMIC STATUS MAPPING ---
+    reward = eval_data.get('reward', 0.5)
+    h_detected = eval_data.get('info', {}).get('hallucination', {}).get('detected', False)
+    
+    status_text = "System Initialized"
+    status_color = "#FFFFFF"
+    
+    if h_detected:
+        status_text = "⚠️ INTEGRITY ANOMALY DETECTED"
+        status_color = "#f87171"
+    elif out['verdict'] == "Inconclusive":
+        status_text = "⚖️ SIGNAL AMBIGUITY"
+        status_color = "#fbbf24"
+    elif reward >= 0.85:
+        status_text = "🏆 OPTIMAL LOGIC GROUNDING"
+        status_color = "#4ade80"
+    elif reward >= 0.70:
+        status_text = "✔️ CONSISTENT ALIGNMENT"
+        status_color = "#60a5fa"
+    elif reward <= 0.30:
+        status_text = "❌ EMPIRICAL CONTRADICTION"
+        status_color = "#ef4444"
+    else:
+        status_text = "🔍 PARTIAL CORRELATION"
+        status_color = "#a78bfa"
+
+    st.markdown(f"""
+    <div class='glass-panel' style='display: flex; justify-content: space-between; align-items: center;'>
+        <div>
+            <div style='font-size: 0.7rem; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 2px;'>AUDIT VERDICT</div>
+            <div style='font-size: 2.8rem; font-family: Outfit, sans-serif; color: #FFF; font-weight: 800; margin-top: 0.2rem;'>{out['verdict']}</div>
+        </div>
+        <div style='text-align: right;'>
+            <div style='font-size: 0.7rem; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;'>SYSTEM STATUS</div>
+            <div style='display: inline-block; padding: 0.6rem 1.5rem; border-radius: 50px; background: rgba(255,255,255,0.03); border: 1px solid {status_color}44; color: {status_color}; font-family: Outfit, sans-serif; font-weight: 700; font-size: 0.9rem;'>{status_text}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- EXECUTIVE BREAKDOWN (NEW) ---
+    st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Executive Audit Summary</div>", unsafe_allow_html=True)
+    
+    trend = eval_data.get('info', {}).get('trend', 'Unknown')
+    ind = obs.independent_var
+    dep = obs.dependent_var
+    
+    if trend == "Increasing": trend_desc = f"a clear **upward correlation** where {dep} rises as {ind} increases."
+    elif trend == "Decreasing": trend_desc = f"a consistent **inverse relationship** where {dep} falls as {ind} increases."
+    elif trend == "Mixed": trend_desc = f"a **volatile/non-monotonic signal** where {dep} fluctuates unpredictably relative to {ind}."
+    else: trend_desc = "an insufficient or flat dataset signal."
+
+    sum_html = f"""
+    <div class='glass-panel' style='padding: 2rem;'>
+        <ul style='list-style-type: none; padding: 0; margin: 0;'>
+            <li style='margin-bottom: 1.2rem; display: flex; align-items: start;'>
+                <span style='color: #60a5fa; margin-right: 1rem; font-size: 1.2rem;'>●</span>
+                <span><strong>Variables Identified:</strong> The system isolated <strong>{ind}</strong> (Independent) and <strong>{dep}</strong> (Dependent) for empirical modeling.</span>
+            </li>
+            <li style='margin-bottom: 1.2rem; display: flex; align-items: start;'>
+                <span style='color: #60a5fa; margin-right: 1rem; font-size: 1.2rem;'>●</span>
+                <span><strong>Pattern Observed:</strong> The dataset demonstrates {trend_desc}</span>
+            </li>
+            <li style='margin-bottom: 0; display: flex; align-items: start;'>
+                <span style='color: #60a5fa; margin-right: 1rem; font-size: 1.2rem;'>●</span>
+                <span><strong>Logic Reconciliation:</strong> The hypothesis predicted that {obs.claim.lower().replace('.', '')}. This expectation was <strong>{"confirmed" if out['verdict'] == "Supported" else ("rejected" if out['verdict'] == "Refuted" else "neutralized")}</strong> by the observed data trend.</span>
+            </li>
+        </ul>
+    </div>
+    """
+    st.markdown(sum_html, unsafe_allow_html=True)
 
     st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Formal Logic Trace</div>", unsafe_allow_html=True)
     
@@ -233,7 +301,17 @@ def show_analysis_dialog():
         parts = step.split('\n', 1)
         # Ensure safe splitting of titles
         title_parts = parts[0].split(':', 1)
-        step_num = f"STEP {title_parts[0].strip()}"
+        # Premium Step Title Aliases
+        title_map = {
+            "STEP 1": "VARIABLE ISOLATION",
+            "STEP 2": "DATASET INTEGRITY AUDIT",
+            "STEP 3": "EMPIRICAL TREND ANALYSIS",
+            "STEP 4": "HYPOTHESIS VECTOR ALIGNMENT",
+            "STEP 5": "SYNTHESIZED LOGIC CONCLUSION"
+        }
+        
+        raw_step_num = f"STEP {title_parts[0].strip()}"
+        step_num = title_map.get(raw_step_num, raw_step_num)
         title_text = title_parts[1].strip() if len(title_parts) > 1 else title_parts[0].strip()
         
         step_body = parts[1].replace('\n', '<br>') if len(parts) > 1 else ""
@@ -253,13 +331,13 @@ def show_analysis_dialog():
     st.markdown("<div class='chapter-tag' style='margin-top: 3rem;'>Final AI Synthesis</div>", unsafe_allow_html=True)
     
     if out['verdict'] == "Supported":
-        c_text = f"The evidence clearly demonstrates a consistent and dominant trend. The claim is decisively <strong>Supported</strong> by the data."
+        c_text = f"The evidence demonstrates a dominant and verifiable correlation. The analytical kernel has confirmed that the dataset behavior aligns exactly with the hypothesis parameters. The claim is decisively **Supported**."
     elif out['verdict'] == "Refuted":
-        c_text = f"The empirical data behaves entirely counter to the hypothesis. The claim is decisively <strong>Refuted</strong>."
+        c_text = f"The empirical data demonstrates a clear contradiction to the hypothesis. The observed trend moves in opposition to the expected outcome, suggesting the claim is fundamentally **Refuted** by the current dataset."
     else:
-        c_text = f"The outcomes vary rapidly depending on other factors rather than following a guaranteed rule. This claim is <strong>Inconclusive</strong>."
+        c_text = f"The dataset exhibits significant volatility or a lack of directional clarity. No stable correlation can be isolated to support or refute the hypothesis, rendering the claim **Inconclusive** within this evidentiary scope."
 
-    st.markdown(f"<div class='glass-panel' style='border-left: 5px solid #EAEAEA; background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(28,28,30,1) 100%);'><p style='font-size: 1.3rem; font-weight: 400; line-height: 1.6; color:#F5F5F5; margin: 0; font-family: Outfit, sans-serif;'>{c_text}</p></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='glass-panel' style='border-left: 5px solid #60a5fa; background: linear-gradient(90deg, rgba(96, 165, 250, 0.05) 0%, rgba(28,28,30,1) 100%);'><p style='font-size: 1.15rem; font-weight: 400; line-height: 1.7; color:#EAEAEA; margin: 0; font-family: Inter, sans-serif;'>{c_text}</p></div>", unsafe_allow_html=True)
 
     st.markdown("<div class='chapter-tag' style='margin-top: 4rem; text-align: center;'>Reward Allocation</div>", unsafe_allow_html=True)
     
@@ -283,14 +361,24 @@ def show_analysis_dialog():
     st.markdown(breakdown_html, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
+    
+    # Qualitative Labels for Scorecard
+    if reward >= 0.85: g_label = "Optimal"
+    elif reward >= 0.6: g_label = "Accurate"
+    else: g_label = "Suboptimal"
+    
+    conf = out.get('confidence', 0.5)
+    if conf >= 0.85: depth_label = "Exhaustive"
+    elif conf >= 0.6: depth_label = "Balanced"
+    else: depth_label = "Cursory"
+
     with col1:
-         # Use 1 decimal place for Final Reward
-         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>FINAL REWARD</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{eval_data['reward']:.1f}</div></div>", unsafe_allow_html=True)
+         st.markdown(f"<div class='glass-panel' style='text-align: center; padding: 1.5rem;'><div class='chapter-tag' style='margin-bottom:0.5rem; font-size: 0.6rem;'>LOGICAL GROUNDING</div><div style='font-size:2.5rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{reward:.2f}</div><div style='font-size:0.7rem; color:#888; margin-top:0.5rem; font-weight:700;'>{g_label.upper()}</div></div>", unsafe_allow_html=True)
     with col2:
-         # Use 1 decimal place for Confidence
-         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>CONFIDENCE SCORE</div><div style='font-size:3rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{out['confidence']:.1f}</div></div>", unsafe_allow_html=True)
+         st.markdown(f"<div class='glass-panel' style='text-align: center; padding: 1.5rem;'><div class='chapter-tag' style='margin-bottom:0.5rem; font-size: 0.6rem;'>INFERENCE DEPTH</div><div style='font-size:2.5rem; font-family:Outfit,sans-serif; font-weight:800; color:#FFF; line-height:1;'>{conf:.2f}</div><div style='font-size:0.7rem; color:#888; margin-top:0.5rem; font-weight:700;'>{depth_label.upper()}</div></div>", unsafe_allow_html=True)
     with col3:
-         st.markdown(f"<div class='glass-panel' style='text-align: center;'><div class='chapter-tag' style='margin-bottom:0.5rem;'>STATUS</div><div style='font-size:1.5rem; font-family:Outfit,sans-serif; font-weight:600; color:#EAEAEA; display:flex; align-items:center; justify-content:center; height:3rem;'>{info_data.get('info', 'Ok')}</div></div>", unsafe_allow_html=True)
+         # Use the dynamic status color for the badge here too
+         st.markdown(f"<div class='glass-panel' style='text-align: center; padding: 1.5rem;'><div class='chapter-tag' style='margin-bottom:0.5rem; font-size: 0.6rem;'>AUDIT FIDELITY</div><div style='font-size:1.2rem; font-family:Outfit,sans-serif; font-weight:700; color:{status_color}; height:2.5rem; display:flex; align-items:center; justify-content:center; line-height:1.2;'>{status_text}</div><div style='font-size:0.7rem; color:#888; margin-top:0.5rem; font-weight:700;'>VERIFIED</div></div>", unsafe_allow_html=True)
 
 # --- VIEW CONTAINERS TO PREVENT GHOSTING ---
 home_placeholder = st.empty()
