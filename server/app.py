@@ -111,8 +111,12 @@ header, footer, [data-testid="stHeader"] {visibility: hidden;}
 }
 .protocol-card:hover { transform: translateY(-4px); border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
 .protocol-card:hover::before { opacity: 1; }
-.protocol-card h3 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.6rem; margin-bottom: 1rem; color: #FFF; letter-spacing: 0.5px; }
-.protocol-card p { color: #888; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem; font-weight: 300;}
+.protocol-card h3 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.8rem; margin-bottom: 1rem; color: #FFF; letter-spacing: 0.5px; text-transform: uppercase; }
+.protocol-card p { font-family: 'Inter', sans-serif; color: #888; font-size: 0.85rem; line-height: 1.7; margin-bottom: 2rem; font-weight: 300; letter-spacing: 0.3px; }
+
+.mode-tag {
+    font-size: 0.65rem; font-weight: 800; letter-spacing: 2.5px; color: #555; margin-bottom: 1.5rem; text-transform: uppercase;
+}
 
 .engine-card {
     background: linear-gradient(145deg, #1C1C1E 0%, #17171A 100%);
@@ -438,16 +442,30 @@ else:
             col_bench, col_cust = st.columns(2)
             with col_bench:
                 bg = "linear-gradient(145deg, #18181A 0%, #121214 100%)"
-                accent = "<div style='width: 30px; height: 3px; background: #FFFFFF; margin: 0 auto 1.5rem auto;'></div>"
+                accent = "<div style='width: 35px; height: 2px; background: rgba(255,255,255,0.2); margin: 0 auto 1.5rem auto;'></div>"
                 
-                st.markdown(f"<div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'><div style='font-size:0.6rem; letter-spacing:2px; color:#666; font-weight:800; margin-bottom:1rem;'>MODE [01]</div>{accent}<h3 style='font-size:1.8rem; font-weight:600;'>Benchmark Runtime</h3><p style='font-size:0.85rem; color:#888; font-weight:300;'>Engage pre-calibrated evaluation tasks. Validate inferential accuracy against closed-system structural mathematics.</p></div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'>
+                    <div class='mode-tag'>MODE [01]</div>
+                    {accent}
+                    <h3>Benchmark Runtime</h3>
+                    <p>Run pre-calibrated evaluation tasks and inspect structured reasoning under benchmark conditions.</p>
+                </div>
+                """, unsafe_allow_html=True)
                 st.button("Initialize Benchmark Stack", use_container_width=True, type="secondary", on_click=select_bench_cb)
                     
             with col_cust:
                 bg = "linear-gradient(145deg, #18181A 0%, #121214 100%)"
-                accent = "<div style='width: 30px; height: 3px; background: #888888; margin: 0 auto 1.5rem auto;'></div>"
+                accent = "<div style='width: 35px; height: 2px; background: rgba(255,255,255,0.1); margin: 0 auto 1.5rem auto;'></div>"
                 
-                st.markdown(f"<div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'><div style='font-size:0.6rem; letter-spacing:2px; color:#666; font-weight:800; margin-bottom:1rem;'>MODE [02]</div>{accent}<h3 style='font-size:1.8rem; font-weight:400;'>Custom Injector</h3><p style='font-size:0.85rem; color:#888; font-weight:300;'>Inject custom matrices directly into the inference core. Probe limits and perform open-ended logical bounding.</p></div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class='protocol-card' style='border-color: rgba(255,255,255,0.04); background: {bg};'>
+                    <div class='mode-tag'>MODE [02]</div>
+                    {accent}
+                    <h3>Custom Injector</h3>
+                    <p>Inject custom datasets into the inference pipeline and inspect open-ended analytical behavior.</p>
+                </div>
+                """, unsafe_allow_html=True)
                 st.button("Initialize Custom Injector", use_container_width=True, type="secondary", on_click=select_cust_cb)
 
     # 2. Engine Selection & Preview
