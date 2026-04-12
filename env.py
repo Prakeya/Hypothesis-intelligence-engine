@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, validator
 # 🧬 Hypothesis Intelligence Engine - Gold Standard (Final)
 # Winner-Level Suite | Phase 2 Compliant | Zero-Trust Logic
 
-EPS = 1e-6
+EPS = 0.01
 
 # -----------------------------
 # 🛠️ High-Fidelity Utilities
@@ -19,8 +19,8 @@ def safe_strict_float(value: Any, default: float = 0.5) -> float:
         x = float(value)
         if math.isnan(x) or math.isinf(x): x = float(default)
     except Exception: x = float(default)
-    if x <= 0.0: return EPS
-    if x >= 1.0: return 1.0 - EPS
+    if x < 0.01: return 0.01
+    if x > 0.99: return 0.99
     return x
 
 def extract_numeric_values(data: List[Dict[str, Any]], key: str) -> List[float]:

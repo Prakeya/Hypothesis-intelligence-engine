@@ -60,7 +60,7 @@ def _normalize_action_data(action_data: Any) -> Dict[str, Any]:
         confidence = float(confidence_source)
     except Exception:
         confidence = 0.5
-    confidence = min(max(confidence, 0.01), 0.94)
+    confidence = min(max(confidence, 0.01), 0.99)
 
     return {
         "verdict": verdict,
@@ -196,7 +196,7 @@ async def main():
                     normalized_action_data = _normalize_action_data(action_data)
                     prev_reasoning = normalized_action_data.get("reasoning", "")
                     
-                    conf = float(normalized_action_data.get("confidence_score", 0.5))
+                    conf = float(normalized_action_data.get("confidence", 0.5))
                     task_confidences.append(conf)
                     
                     action = _build_action(normalized_action_data)
@@ -214,7 +214,7 @@ async def main():
                 weighted_score = (last_reward * 0.7) + (avg_conf * 0.3)
                 
                 # Clamp boundaries safely above 0 and under 1
-                final_clamped_score = min(max(weighted_score, 0.1), 0.9)
+                final_clamped_score = min(max(weighted_score, 0.01), 0.99)
                 
                 print(f"[END] task={t_id} score={final_clamped_score} steps=3", flush=True)
                 
