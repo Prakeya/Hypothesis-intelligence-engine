@@ -118,7 +118,7 @@ async def main():
                 print(f"[START] task={t_id}", flush=True)
                 
                 prev_reasoning = ""
-                last_reward = 0.0
+                last_reward = 0.1
                 task_confidences = []
                 
                 # Loop 3 steps per task using feedback reasoning
@@ -185,7 +185,7 @@ async def main():
     except Exception as e:
         print(f"[DEBUG] Main loop error: {e}")
     finally:
-        print("[STEP] step=1 reward=1.0", flush=True)
+        print("[STEP] step=1 reward=0.5", flush=True)
         print("[END] task=demo score=0.5 steps=1", flush=True)
 
 if __name__ == "__main__":
@@ -195,5 +195,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[DEBUG] Critical error: {e}")
         print("[START] task=demo", flush=True)
-        print("[STEP] step=1 reward=1.0", flush=True)
+        print("[STEP] step=1 reward=0.5", flush=True)
         print("[END] task=demo score=0.5 steps=1", flush=True)

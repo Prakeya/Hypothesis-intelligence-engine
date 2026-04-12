@@ -70,7 +70,7 @@ def evaluate_action(action, task, ground_truth=None):
         "reward": final_reward,
         "hallucination_detected": hallucination_detected,
         "verdict_correct": verdict_correct,
-        "logic_consistency": 1.0 if verdict_correct else 0.5,
+        "logic_consistency": 0.9 if verdict_correct else 0.5,
         "info": "Hallucinated Context" if hallucination_detected else "Logic Validated",
         "breakdown": breakdown
     }
