@@ -55,7 +55,7 @@ def evaluate_action(action, task, ground_truth=None):
     
     if hallucination_detected:
         reward = 0.0
-        breakdown.append({"metric": "Hallucination Check", "status": "FAIL", "points": "-1.0", "reason": "Fabricated numbers not found in evidence."})
+        breakdown.append({"metric": "Hallucination Check", "status": "FAIL", "points": "0.0", "reason": "Fabricated numbers not found in evidence."})
         breakdown.append({"metric": "Verdict Accuracy", "status": "VOID", "points": "0.0", "reason": "Skipped due to hallucination."})
         breakdown.append({"metric": "Logic Baseline", "status": "VOID", "points": "0.0", "reason": "Skipped due to severe logic flaw."})
     elif verdict_correct:

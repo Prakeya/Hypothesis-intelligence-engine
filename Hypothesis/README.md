@@ -21,7 +21,7 @@ Modern LLMs excel at generating claims but frequently struggle with **grounding*
 - **Strict Phase 2 OpenEnv Compliance**: Full implementation of standardized `[START]`, `[STEP]`, and `[END]` event logging required by stringent Deep Validator pipelines.
 - **Fail-Safe Pydantic Guardrails**: Safe isolation of agent execution using dual-layered try/except blocks and advanced Pydantic attribute resolution mapped correctly across varying legacy/new observation schemas.
 - **Logic Auditing Protocol**: Agents follow structured logic parsing (Monotonic Trends, Causal Filtering, Strict Absolute Statements formatting).
-- **Hallucination Detection Guard**: Programmatic mathematical parsing that aggressively penalizes numerical fabrication and bounds the final score between 10% and 90%.
+- **Hallucination Detection Guard**: Programmatic mathematical parsing that aggressively penalizes numerical fabrication and bounds the final reward between 0.0 and 1.0.
 - **FastAPI Backend Structure**: Application is built fully as a scalable Docker-deployed JSON API listening on Port 7860.
 
 ## OpenEnv Specifications
