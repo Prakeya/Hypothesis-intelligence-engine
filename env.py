@@ -80,7 +80,7 @@ class HypothesisEnv:
         # ✅ KEEP YOUR ORIGINAL TASKS UNCHANGED
         self.benchmark_tasks = [
             {
-                "id": "easy-01",
+                "id": "baseline-correlation",
                 "difficulty": "easy",
                 "claim": "More study hours improve marks.",
                 "dataset": [
@@ -94,7 +94,7 @@ class HypothesisEnv:
                 "grader": evaluate_action
             },
             {
-                "id": "medium-01",
+                "id": "nonlinear-dependency",
                 "difficulty": "medium",
                 "claim": "Higher caffeine intake leads to less sleep.",
                 "dataset": [
@@ -109,7 +109,7 @@ class HypothesisEnv:
                 "grader": evaluate_action
             },
             {
-                "id": "hard-01",
+                "id": "confounding-variables",
                 "difficulty": "hard",
                 "claim": "Increased rainfall always leads to higher crop yield.",
                 "dataset": [
