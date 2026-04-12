@@ -237,6 +237,8 @@ def show_analysis_dialog():
     st.markdown("<div id='logic-anchor' class='chapter-tag'>Audit Conclusion & Status</div>", unsafe_allow_html=True)
     
     # --- DYNAMIC ALIGNMENT MATRIX (USER DEFINITIVE) ---
+    info_data = eval_data.get('info', {})
+    diagnostics = info_data.get('diagnostics', {})
     c_dir = diagnostics.get("claim_direction")
     t_dir = diagnostics.get("trend_direction")
     v = out.get("verdict")
