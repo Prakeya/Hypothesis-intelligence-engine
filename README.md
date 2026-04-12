@@ -3,9 +3,7 @@ title: Hypothesis Intelligence Engine
 emoji: 🧬
 colorFrom: indigo
 colorTo: blue
-sdk: streamlit
-sdk_version: "1.42.0"
-app_file: app.py
+sdk: docker
 pinned: false
 ---
 

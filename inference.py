@@ -41,7 +41,7 @@ def _fallback_action_data(reason: str = "Fallback") -> Dict[str, Any]:
     return {
         "verdict": "Inconclusive",
         "reasoning": reason,
-        "confidence_score": 0.5,
+        "confidence": 0.5,
     }
 
 
@@ -55,7 +55,7 @@ def _normalize_action_data(action_data: Any) -> Dict[str, Any]:
 
     reasoning = action_data.get("reasoning") or action_data.get("conclusion") or "Fallback"
 
-    confidence_source = action_data.get("confidence_score", action_data.get("confidence", 0.5))
+    confidence_source = action_data.get("confidence", action_data.get("confidence_score", 0.5))
     try:
         confidence = float(confidence_source)
     except Exception:
@@ -65,15 +65,15 @@ def _normalize_action_data(action_data: Any) -> Dict[str, Any]:
     return {
         "verdict": verdict,
         "reasoning": reasoning,
-        "confidence_score": confidence,
+        "confidence": confidence,
     }
-
 
 def _build_action(action_data: Any) -> Action:
     normalized = _normalize_action_data(action_data)
     try:
         return Action(**normalized)
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG] Action build failed: {e}")
         return Action(
             verdict="Inconclusive",
             reasoning="Fallback",
@@ -109,7 +109,7 @@ def get_model_message(client: OpenAI, step: int, claim: str, dataset: List, last
     Review your previous reasoning. If flawed, correct it.
     Previous Reasoning: {prev_reasoning}
     
-    Output JSON with exactly: verdict (Supported, Refuted, or Inconclusive), reasoning (short explanation strictly grounded in evidence), and confidence_score (strictly between 0.01 and 0.94).
+    Output JSON with exactly: verdict (Supported, Refuted, or Inconclusive), reasoning (short explanation strictly grounded in evidence), and confidence (strictly between 0.01 and 0.94).
     """
     try:
         response = client.chat.completions.create(
