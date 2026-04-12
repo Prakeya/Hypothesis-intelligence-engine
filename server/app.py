@@ -235,52 +235,8 @@ def show_analysis_dialog():
     st.markdown(f"<div style='font-size: 1.5rem; font-style: italic; color: #fff; margin-bottom: 2rem;'>\"{obs.claim}\"</div>", unsafe_allow_html=True)
 
     st.markdown("<div id='logic-anchor' class='chapter-tag'>Audit Conclusion & Status</div>", unsafe_allow_html=True)
-    
-    # --- DYNAMIC ALIGNMENT MATRIX (USER DEFINITIVE) ---
     info_data = eval_data.get('info', {})
     reward = eval_data.get('reward', 0.5)
-    diagnostics = info_data.get('diagnostics', {})
-    c_dir = diagnostics.get("claim_direction")
-    t_dir = diagnostics.get("trend_direction")
-    v = out.get("verdict")
-    
-    def get_alignment_status(claim_dir, trend_dir, verdict):
-        if not claim_dir or not trend_dir or not verdict: return "unknown"
-        if trend_dir in ["mixed", "neutral"]:
-            return "aligned" if verdict == "Inconclusive" else "mixed"
-        if claim_dir == "positive" and trend_dir == "positive" and verdict == "Supported": return "aligned"
-        if claim_dir == "positive" and trend_dir == "negative" and verdict == "Refuted": return "aligned"
-        if claim_dir == "negative" and trend_dir == "negative" and verdict == "Supported": return "aligned"
-        if claim_dir == "negative" and trend_dir == "positive" and verdict == "Refuted": return "aligned"
-        if verdict == "Inconclusive": return "mixed"
-        return "misaligned"
-
-    alignment_status = get_alignment_status(c_dir, t_dir, v)
-
-    if alignment_status == "misaligned":
-        st.markdown("""
-            <div style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.08); border-radius: 28px; padding: 1.5rem; text-align: center; margin-bottom: 2rem;">
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px;">
-                    <span style="color: #FCD34D; font-size: 1.2rem;">⚠️</span>
-                    <span style="color: #FCD34D; font-weight: 600; font-size: 1.05rem; letter-spacing: 0.04em;">Data–Hypothesis Misalignment</span>
-                </div>
-                <p style="color: #A1A1AA; font-size: 0.85rem; line-height: 1.6; margin: 0;">
-                    Detected a mismatch between the final verdict and the observed evidence pattern.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-    elif alignment_status == "mixed":
-        st.markdown("""
-            <div style="border: 1px solid rgba(245, 158, 11, 0.2); background: rgba(245, 158, 11, 0.06); border-radius: 28px; padding: 1.5rem; text-align: center; margin-bottom: 2rem;">
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px;">
-                    <span style="color: #FCD34D; font-size: 1.2rem;">⚠️</span>
-                    <span style="color: #FCD34D; font-weight: 600; font-size: 1.05rem; letter-spacing: 0.04em;">Mixed Evidence Pattern</span>
-                </div>
-                <p style="color: #A1A1AA; font-size: 0.85rem; line-height: 1.6; margin: 0;">
-                    The dataset does not show a single clean directional pattern, so the result should be interpreted with caution.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
 
     status_text = "System Initialized"
     status_color = "#FFFFFF"
