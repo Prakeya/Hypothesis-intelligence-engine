@@ -173,13 +173,25 @@ header, footer, [data-testid="stHeader"] {visibility: hidden;}
     transform: translateY(-5px) !important;
     border-color: rgba(255, 255, 255, 0.3) !important;
 }
-.glass-panel {
     transition: transform 0.1s ease-out, border-color 0.1s ease-out !important;
 }
 .glass-panel:hover {
     transform: translateY(-2px) !important;
     border-color: rgba(255,255,255,0.1) !important;
 }
+
+/* Semantic Highlighting */
+.val-supported { color: #4ade80; font-weight: 700; }
+.val-refuted { color: #f87171; font-weight: 700; }
+.val-inconclusive { color: #fbbf24; font-weight: 700; }
+.trend-inc { color: #60a5fa; font-weight: 600; }
+.trend-dec { color: #f472b6; font-weight: 600; }
+.trend-mixed { color: #a78bfa; font-weight: 600; }
+
+.semi-bold { font-weight: 600; color: #EEE; }
+.premium-bullet { color: #60a5fa; margin-right: 0.8rem; font-size: 1.1rem; }
+.bullet-list { list-style-type: none; padding: 0; margin: 0; }
+.bullet-item { margin-bottom: 0.8rem; display: flex; align-items: start; line-height: 1.6; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -259,32 +271,34 @@ def show_analysis_dialog():
     </div>
     """, unsafe_allow_html=True)
 
-    # --- EXECUTIVE BREAKDOWN (NEW) ---
+    # --- EXECUTIVE BREAKDOWN (REFINED) ---
     st.markdown("<div class='chapter-tag' style='margin-top: 2rem;'>Executive Audit Summary</div>", unsafe_allow_html=True)
     
     trend = eval_data.get('info', {}).get('trend', 'Unknown')
     ind = obs.independent_var
     dep = obs.dependent_var
+    v_color = "val-supported" if out['verdict'] == "Supported" else ("val-refuted" if out['verdict'] == "Refuted" else "val-inconclusive")
     
-    if trend == "Increasing": trend_desc = f"a clear **upward correlation** where {dep} rises as {ind} increases."
-    elif trend == "Decreasing": trend_desc = f"a consistent **inverse relationship** where {dep} falls as {ind} increases."
-    elif trend == "Mixed": trend_desc = f"a **volatile/non-monotonic signal** where {dep} fluctuates unpredictably relative to {ind}."
-    else: trend_desc = "an insufficient or flat dataset signal."
+    trend_cls = "trend-inc" if trend == "Increasing" else ("trend-dec" if trend == "Decreasing" else "trend-mixed")
+    if trend == "Increasing": trend_desc = "Clear upward correlation"
+    elif trend == "Decreasing": trend_desc = "Consistent inverse relationship"
+    elif trend == "Mixed": trend_desc = "Volatile/mixed signal"
+    else: trend_desc = "Flat dataset signal"
 
     sum_html = f"""
     <div class='glass-panel' style='padding: 2rem;'>
-        <ul style='list-style-type: none; padding: 0; margin: 0;'>
-            <li style='margin-bottom: 1.2rem; display: flex; align-items: start;'>
-                <span style='color: #60a5fa; margin-right: 1rem; font-size: 1.2rem;'>●</span>
-                <span><strong>Variables Identified:</strong> The system isolated <strong>{ind}</strong> (Independent) and <strong>{dep}</strong> (Dependent) for empirical modeling.</span>
+        <ul class='bullet-list'>
+            <li class='bullet-item'>
+                <span class='premium-bullet'>•</span>
+                <span><span style='color:#777;'>Variables Identified:</span> <span class='semi-bold'>{ind}</span> (Cause) & <span class='semi-bold'>{dep}</span> (Effect)</span>
             </li>
-            <li style='margin-bottom: 1.2rem; display: flex; align-items: start;'>
-                <span style='color: #60a5fa; margin-right: 1rem; font-size: 1.2rem;'>●</span>
-                <span><strong>Pattern Observed:</strong> The dataset demonstrates {trend_desc}</span>
+            <li class='bullet-item'>
+                <span class='premium-bullet'>•</span>
+                <span><span style='color:#777;'>Pattern Observed:</span> <span class='{trend_cls}'>{trend_desc}</span></span>
             </li>
-            <li style='margin-bottom: 0; display: flex; align-items: start;'>
-                <span style='color: #60a5fa; margin-right: 1rem; font-size: 1.2rem;'>●</span>
-                <span><strong>Logic Reconciliation:</strong> The hypothesis predicted that {obs.claim.lower().replace('.', '')}. This expectation was <strong>{"confirmed" if out['verdict'] == "Supported" else ("rejected" if out['verdict'] == "Refuted" else "neutralized")}</strong> by the observed data trend.</span>
+            <li class='bullet-item'>
+                <span class='premium-bullet'>•</span>
+                <span><span style='color:#777;'>Logic Check:</span> <span class='{v_color}'>{"Claim aligns with evidence" if out['verdict'] == "Supported" else ("Claim contradicts evidence" if out['verdict'] == "Refuted" else "Claim lacks empirical grounding")}</span></span>
             </li>
         </ul>
     </div>
@@ -299,31 +313,41 @@ def show_analysis_dialog():
     for step in steps:
         if not step.strip(): continue
         parts = step.split('\n', 1)
-        # Ensure safe splitting of titles
         title_parts = parts[0].split(':', 1)
+        
         # Premium Step Title Aliases
         title_map = {
-            "STEP 1": "VARIABLE ISOLATION",
-            "STEP 2": "DATASET INTEGRITY AUDIT",
-            "STEP 3": "EMPIRICAL TREND ANALYSIS",
-            "STEP 4": "HYPOTHESIS VECTOR ALIGNMENT",
-            "STEP 5": "SYNTHESIZED LOGIC CONCLUSION"
+            "STEP 1": "Metric Isolation",
+            "STEP 2": "Evidence Validation",
+            "STEP 3": "Empirical Trend Analysis",
+            "STEP 4": "Hypothesis Direction",
+            "STEP 5": "Synthesized Conclusion"
         }
         
-        raw_step_num = f"STEP {title_parts[0].strip()}"
-        step_num = title_map.get(raw_step_num, raw_step_num)
+        raw_step_tag = f"STEP {title_parts[0].strip()}"
+        step_alias = title_map.get(raw_step_tag.upper(), raw_step_tag)
         title_text = title_parts[1].strip() if len(title_parts) > 1 else title_parts[0].strip()
         
-        step_body = parts[1].replace('\n', '<br>') if len(parts) > 1 else ""
-        step_body = re.sub(r'\*\*(.*?)\*\*', r'<strong style="color: #FFF; font-weight: 600;">\1</strong>', step_body)
+        body_raw = parts[1] if len(parts) > 1 else ""
+        
+        # Convert Markdown Bold to HTML semi-bold
+        body_html = re.sub(r'\*\*(.*?)\*\*', r'<span class="semi-bold">\1</span>', body_raw)
+        
+        # Structure sentences as bullets
+        sentences = [s.strip() for s in body_html.split('. ') if s.strip()]
+        bullet_html = "<ul class='bullet-list'>"
+        for s in sentences:
+            if not s.endswith('.'): s += '.'
+            bullet_html += f"<li class='bullet-item'><span class='premium-bullet' style='font-size:0.7rem; margin-top:0.4rem;'>•</span><span>{s}</span></li>"
+        bullet_html += "</ul>"
         
         html_block = f"""
         <div class='logic-node'>
             <div class='logic-node-header'>
-                <span class='logic-node-step'>{step_num}</span>
-                <span class='logic-node-title'>{title_text}</span>
+                <span class='logic-node-step'>{raw_step_tag.upper()}</span>
+                <span class='logic-node-title' style='text-transform: uppercase; letter-spacing: 1px; font-size: 1rem; color: #FFF;'>— {step_alias.upper()}</span>
             </div>
-            <div class='logic-node-body'>{step_body}</div>
+            <div class='logic-node-body'>{bullet_html}</div>
         </div>
         """
         st.markdown(html_block, unsafe_allow_html=True)
