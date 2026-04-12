@@ -44,30 +44,37 @@ class State(BaseModel):
 
 def evaluate_action(action, task, ground_truth=None):
     """
-    OpenEnv Compliant Grader
+    OpenEnv Compliant Grader: Strictly between 0 and 1.
     """
     verdict = action.get("verdict", "")
-    reasoning = action.get("reasoning", "")
+    confidence = float(action.get("confidence", 0.5))
 
     evidence = task.get("dataset", [])
     dep_var = task.get("dependent_var", "y")
 
     y_vals = [d[dep_var] for d in evidence if dep_var in d]
 
+    raw_reward = 0.5
     if len(y_vals) >= 2:
         is_pos = y_vals[-1] > y_vals[0]
         if is_pos and verdict == "Supported":
-            reward = 1.0
+            raw_reward = 0.9
         elif not is_pos and verdict == "Refuted":
-            reward = 1.0
+            raw_reward = 0.9
         else:
-            reward = 0.5
+            raw_reward = 0.2
     else:
-        reward = 0.5
+        raw_reward = 0.5
 
+    # Strictly between 0 and 1: Use confidence to nudge but stay away from boundaries
+    final_reward = (raw_reward * 0.8) + (confidence * 0.1) + 0.05
+    # final_reward will be:
+    # Max: (0.9 * 0.8) + (1.0 * 0.1) + 0.05 = 0.72 + 0.1 + 0.05 = 0.87
+    # Min: (0.2 * 0.8) + (0.0 * 0.1) + 0.05 = 0.16 + 0.05 = 0.21
+    
     return {
-        "reward": reward,
-        "info": {"grader": "discovery_verified"}
+        "reward": final_reward,
+        "info": {"grader": "strictly_between_0_1", "raw": raw_reward}
     }
 
 
